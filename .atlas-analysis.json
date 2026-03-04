@@ -1,0 +1,105 @@
+{
+  "projectType": "saas",
+  "projectName": "Gõ Nhanh",
+  "projectDescription": "Modern, high-performance Vietnamese input method for macOS, Linux, and Windows",
+  "theme": "almond",
+  "primaryColor": "#242b2c",
+  "lightColor": "#040404",
+  "darkColor": "#6a6a6d",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Installation",
+            "pages": [
+              "installation/macos",
+              "installation/linux",
+              "installation/windows"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/overview",
+              "features/auto-restore",
+              "features/smart-switching",
+              "features/input-methods",
+              "features/shortcuts"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/settings",
+              "configuration/per-app-config",
+              "configuration/tone-placement"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/common-issues",
+              "troubleshooting/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Technical",
+        "groups": [
+          {
+            "group": "Architecture",
+            "pages": [
+              "technical/system-architecture",
+              "technical/core-engine",
+              "technical/validation-algorithm",
+              "technical/vietnamese-language-system"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/getting-started",
+              "development/building",
+              "development/contributing",
+              "development/code-standards"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Auto-restore English words typed with Vietnamese IME",
+    "ESC key to restore mistyped words",
+    "Smart per-app input mode switching",
+    "Automatic input source following",
+    "Telex and VNI input methods",
+    "Modern tone placement rules",
+    "Auto-capitalize sentences",
+    "Custom shortcuts",
+    "Per-app delay configuration",
+    "Offline, no data collection"
+  ],
+  "publicApiSurface": [
+    "ime_init() - Initialize IME engine",
+    "ime_key(key, caps, ctrl) - Process keystroke",
+    "ime_key_ext(key, caps, ctrl, shift) - Process keystroke with shift",
+    "ime_clear() - Clear buffer on word boundary",
+    "ime_method(method) - Set input method (0=Telex, 1=VNI)",
+    "ime_shortcut_add(from, to) - Add custom shortcut",
+    "ime_shortcut_remove(from) - Remove shortcut",
+    "ime_tone_position(mode) - Set tone placement mode",
+    "ime_auto_capitalize(enabled) - Toggle auto-capitalization",
+    "ime_free(result) - Free result pointer"
+  ]
+}
