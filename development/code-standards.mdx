@@ -1,0 +1,497 @@
+---
+title: Code Standards
+description: Coding conventions and standards for Gõ Nhanh development
+---
+
+This document outlines the coding standards and conventions used in the Gõ Nhanh project.
+
+## Rust Code Standards
+
+### Formatting and Linting
+
+Code quality is enforced through automated tools:
+
+| Tool | Purpose | Command | Policy |
+|------|---------|---------|--------|
+| `cargo fmt` | Code formatting | `cd core && cargo fmt` | Enforced (automatic) |
+| `cargo clippy` | Linting | `cargo clippy -- -D warnings` | Zero warnings allowed |
+| GitHub Actions | CI checks | Automatic on PR | Must pass to merge |
+
+<Note>
+  Pre-commit checks run automatically on all pull requests.
+</Note>
+
+### Naming Conventions
+
+- **Functions/Variables**: snake_case
+- **Types/Structs**: CamelCase
+- **Constants**: SCREAMING_SNAKE_CASE
+- **Modules**: snake_case
+
+```rust
+// Good
+const MAX_BUFFER_SIZE: usize = 64;
+
+pub struct ImeEngine {
+    current_method: InputMethod,
+}
+
+pub fn process_keystroke(key: u16) -> Result {
+    // ...
+}
+
+// Bad
+const maxBufferSize: usize = 64;  // Should be SCREAMING_SNAKE_CASE
+pub struct ime_engine { }          // Should be CamelCase
+pub fn ProcessKeystroke() { }      // Should be snake_case
+```
+
+### Module Organization
+
+Organize files consistently:
+
+```rust
+//! Module-level documentation explaining purpose
+
+// === Imports ===
+use crate::data::keys;
+use std::collections::HashMap;
+
+// === Constants ===
+pub const MAX_BUFFER: usize = 64;
+const DEFAULT_METHOD: u8 = 0;
+
+// === Type Definitions ===
+pub struct MyStruct {
+    field: Type,
+}
+
+pub enum MyEnum {
+    Variant1,
+    Variant2,
+}
+
+// === Public Functions ===
+pub fn public_function() {
+    // Implementation
+}
+
+// === Private Implementation ===
+fn private_helper() {
+    // Implementation
+}
+
+// === Tests ===
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_something() {
+        // Test implementation
+    }
+}
+```
+
+### Zero-Dependency Philosophy
+
+<Warning>
+  The core library (`core/src/`) has **absolutely no external dependencies** in production.
+</Warning>
+
+**Rationale**:
+- FFI library must be lightweight
+- Self-contained for reliability
+- Minimal binary size
+- No supply chain vulnerabilities
+
+**Allowed exceptions**:
+- `rstest` in `dev-dependencies` for test parametrization
+- `serial_test` for test synchronization
+
+```toml
+[dependencies]
+# No external dependencies!
+
+[dev-dependencies]
+rstest = "0.18"
+serial_test = "3.0"
+```
+
+### Documentation
+
+All public APIs require documentation:
+
+```rust
+/// Process a Vietnamese keystroke through the IME engine.
+///
+/// # Arguments
+/// * `key` - macOS virtual keycode (0-127)
+/// * `caps` - true if Shift or CapsLock is pressed
+/// * `ctrl` - true if Control is pressed
+///
+/// # Returns
+/// Pointer to Result struct containing:
+/// - `action`: Type of action to perform (0=none, 1=replace, 2=append)
+/// - `backspace`: Number of characters to delete
+/// - `count`: Number of output characters
+/// - `chars`: Output character array
+///
+/// # Safety
+/// The caller must free the returned pointer using `ime_free()`.
+///
+/// # Example
+/// ```c
+/// ImeResult* result = ime_key(keys::A, false, false);
+/// if (result && result->action == 1) {
+///     // Process result->backspace and result->chars
+/// }
+/// ime_free(result);
+/// ```
+#[no_mangle]
+pub extern "C" fn ime_key(key: u16, caps: bool, ctrl: bool) -> *mut Result {
+    // Implementation
+}
+```
+
+### API Guidelines
+
+For FFI-exposed functions:
+
+- **FFI Safety**: All `extern "C"` functions are unsafe by contract
+- **Memory Management**: Caller owns and must free returned pointers
+- **Error Handling**: Return `null` or default values, never panic
+- **Documentation**: Include C-style examples in rustdoc
+
+```rust
+// Good: Safe error handling
+#[no_mangle]
+pub extern "C" fn ime_process(input: *const c_char) -> *mut Result {
+    if input.is_null() {
+        return ptr::null_mut();  // Safe fallback
+    }
+    // Process...
+}
+
+// Bad: Can panic
+pub extern "C" fn ime_process(input: *const c_char) -> *mut Result {
+    let s = unsafe { CStr::from_ptr(input) };
+    s.to_str().unwrap()  // ❌ Can panic!
+}
+```
+
+### Testing Standards
+
+Every module must have comprehensive tests:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    // Simple test
+    #[test]
+    fn test_basic_conversion() {
+        let result = convert_tone('a', Tone::Sac);
+        assert_eq!(result, 'á');
+    }
+
+    // Parameterized test
+    #[rstest]
+    #[case('a', Tone::Sac, 'á')]
+    #[case('a', Tone::Huyen, 'à')]
+    #[case('e', Tone::Hoi, 'ẻ')]
+    fn test_tone_conversion(
+        #[case] base: char,
+        #[case] tone: Tone,
+        #[case] expected: char
+    ) {
+        assert_eq!(convert_tone(base, tone), expected);
+    }
+}
+```
+
+**Test organization**:
+- **Unit tests**: In module (`#[cfg(test)] mod tests`)
+- **Integration tests**: In `core/tests/` directory
+- **Test files**: See [test categories](/development/getting-started#testing-strategy)
+
+**Running tests**:
+```bash
+make test                          # All tests
+cd core && cargo test              # Core tests only
+cargo test -- --nocapture          # With output
+cargo test test_name               # Specific test
+```
+
+## Swift Code Standards
+
+### Style Guide
+
+We follow the [Google Swift Style Guide](https://google.github.io/swift-style-guide/):
+
+- **Indentation**: 4 spaces (Xcode default)
+- **Variables/Functions**: camelCase
+- **Types/Enums**: PascalCase
+- **Constants**: camelCase with `k` prefix for file-scope
+
+### File Organization
+
+```swift
+// MARK: - Imports
+import Foundation
+import AppKit
+
+// MARK: - Constants
+let kDebugLogPath = "/tmp/gonhanh_debug.log"
+
+// MARK: - Type Definitions
+class InputMethodManager {
+    // MARK: - Properties
+    private var isEnabled: Bool
+    private var currentMethod: InputMethod
+
+    // MARK: - Lifecycle
+    init() {
+        self.isEnabled = false
+        self.currentMethod = .telex
+    }
+
+    // MARK: - Public Methods
+    func toggle() {
+        isEnabled.toggle()
+    }
+
+    // MARK: - Private Methods
+    private func updateStatus() {
+        // Implementation
+    }
+}
+
+// MARK: - Extensions
+extension InputMethodManager: CustomStringConvertible {
+    var description: String {
+        return "InputMethod(enabled: \(isEnabled))"
+    }
+}
+```
+
+### SwiftFormat Configuration
+
+Location: `platforms/macos/.swiftformat`
+
+```swift
+--swiftversion 5.9
+--exclude build
+--disable wrapPropertyBodies
+```
+
+Run formatting:
+```bash
+make format
+# or
+swiftformat platforms/macos --quiet
+```
+
+### Error Handling
+
+```swift
+// Good: Proper error handling
+if let result = ime_key(key: keyCode, caps: capsLock, ctrl: false) {
+    defer { ime_free(result) }
+    processResult(result.pointee)
+} else {
+    NSLog("IME processing failed for key: \(keyCode)")
+}
+
+// Bad: Force unwrapping
+let result = ime_key(...)!
+processResult(result.pointee)  // ❌ Crashes if nil
+```
+
+### Concurrency
+
+```swift
+// UI updates on main thread
+DispatchQueue.main.async {
+    self.statusItem.title = newTitle
+}
+
+// Background work
+DispatchQueue.global(qos: .userInitiated).async {
+    let data = self.processData()
+    DispatchQueue.main.async {
+        self.updateUI(with: data)
+    }
+}
+```
+
+## FFI (Foreign Function Interface) Standards
+
+### C ABI Compatibility
+
+Structs shared between Rust and Swift must match exactly:
+
+<CodeGroup>
+```rust Rust Definition
+#[repr(C)]
+pub struct Result {
+    pub chars: [u32; 32],    // 128 bytes
+    pub action: u8,           // 1 byte
+    pub backspace: u8,        // 1 byte
+    pub count: u8,            // 1 byte
+    pub _pad: u8,             // 1 byte padding
+}
+```
+
+```swift Swift Definition
+struct ImeResult {
+    var chars: (UInt32, UInt32, /* ... 32 total */)  // 128 bytes
+    var action: UInt8         // 1 byte
+    var backspace: UInt8      // 1 byte
+    var count: UInt8          // 1 byte
+    var _pad: UInt8           // 1 byte padding
+}
+```
+</CodeGroup>
+
+<Warning>
+  Struct layouts must match **byte-for-byte** or you'll get memory corruption.
+</Warning>
+
+### Pointer Management
+
+Follow strict ownership rules:
+
+```swift
+// ✅ Correct: Use defer for cleanup
+guard let resultPtr = ime_key(keyCode, caps, ctrl) else {
+    return
+}
+defer { ime_free(resultPtr) }  // Guaranteed cleanup
+
+let result = resultPtr.pointee
+processResult(result)
+
+// ❌ Wrong: Manual cleanup (easy to forget)
+let resultPtr = ime_key(keyCode, caps, ctrl)
+processResult(resultPtr!.pointee)
+ime_free(resultPtr)  // What if processResult throws?
+```
+
+### Function Declarations
+
+```swift
+// Import with exact Rust signature
+@_silgen_name("ime_key")
+func ime_key(
+    _ key: UInt16,
+    _ caps: Bool,
+    _ ctrl: Bool
+) -> UnsafeMutablePointer<ImeResult>?
+
+@_silgen_name("ime_free")
+func ime_free(_ ptr: UnsafeMutablePointer<ImeResult>?)
+```
+
+## Commit Message Standards
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+### Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Subject Line Rules
+
+1. **Imperative mood**: "add" not "adds" or "added"
+2. **Lowercase first letter**
+3. **No period at end**
+4. **Max 50 characters**
+5. Complete: "If applied, this commit will..."
+
+### Examples
+
+<CodeGroup>
+```bash Good
+feat(engine): add tone repositioning for complex vowels
+
+Implement phonology rules for handling tone marks on vowel clusters
+like "oá" and "uý". Ensures correct Unicode normalization.
+
+Closes #123
+```
+
+```bash Bad
+Added new feature.  ❌ (not imperative, vague, period)
+FEAT: engine changes  ❌ (wrong case, no scope)
+feat(engine): Added tone repositioning for complex vowels.  ❌ (period, past tense)
+```
+</CodeGroup>
+
+## Version Numbering
+
+We use [Semantic Versioning](https://semver.org/):
+
+```
+MAJOR.MINOR.PATCH
+```
+
+- **MAJOR**: Breaking changes (rare)
+- **MINOR**: New features, backward compatible
+- **PATCH**: Bug fixes only
+
+**Examples**:
+- `1.0.21` → `1.0.22`: Bug fix (patch)
+- `1.0.22` → `1.1.0`: New feature (minor)
+- `1.1.0` → `2.0.0`: Breaking change (major)
+
+**Release tags**: Use `v` prefix (e.g., `v1.0.22`)
+
+## Pull Request Standards
+
+Before submitting:
+
+<Checklist>
+  - [ ] Code formatted (`make format`)
+  - [ ] Linters pass (`make lint`)
+  - [ ] Tests pass (`make test`)
+  - [ ] New code has tests
+  - [ ] Documentation updated
+  - [ ] Commit messages follow convention
+  - [ ] One logical change per PR
+  - [ ] No commented-out code
+  - [ ] No merge commits (rebase instead)
+</Checklist>
+
+**CI Requirements**:
+- All GitHub Actions checks must pass
+- At least one approval from maintainer
+- No unresolved review comments
+
+## Enforcement
+
+**Automated**:
+- GitHub Actions CI (`ci.yml`)
+- Pre-commit hooks (optional)
+- Dependabot security updates
+
+**Manual**:
+- Code review process
+- Pull request discussions
+
+<Note>
+  Standards are enforced to maintain code quality, not to be bureaucratic. If you have questions or suggestions, open an issue!
+</Note>
+
+---
+
+**Last Updated**: 2025-12-14  
+**Test Coverage**: 160+ integration tests across 6 test files

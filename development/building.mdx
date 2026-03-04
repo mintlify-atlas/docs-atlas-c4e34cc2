@@ -1,0 +1,417 @@
+---
+title: Building from Source
+description: Complete guide to building Gõ Nhanh for all platforms
+---
+
+This guide covers building Gõ Nhanh from source for different platforms and configurations.
+
+## Quick Build
+
+For most development work, use the standard build command:
+
+```bash
+make build
+```
+
+This runs the complete build pipeline:
+1. Formats code
+2. Builds Rust core as universal binary (arm64 + x86_64)
+3. Builds macOS app with Xcode
+4. Auto-opens the app
+
+## Building Components
+
+### Rust Core Library
+
+The core input method engine is built as a static library that can be linked from any platform.
+
+<Steps>
+  <Step title="Build for macOS (universal binary)">
+    ```bash
+    make core
+    ```
+    
+    This creates a universal binary supporting both architectures:
+    - `aarch64-apple-darwin` (Apple Silicon)
+    - `x86_64-apple-darwin` (Intel)
+    
+    Output: `platforms/macos/libgonhanh_core.a`
+  </Step>
+
+  <Step title="Verify the binary">
+    ```bash
+    lipo -info platforms/macos/libgonhanh_core.a
+    ```
+    
+    Expected output:
+    ```
+    Architectures in the fat file are: x86_64 arm64
+    ```
+  </Step>
+
+  <Step title="Check library size">
+    ```bash
+    du -sh platforms/macos/libgonhanh_core.a
+    ```
+    
+    Typically ~2-3 MB for the optimized release build.
+  </Step>
+</Steps>
+
+<Note>
+  The core library has **zero external dependencies** in production. This keeps the binary small and self-contained.
+</Note>
+
+### macOS Application
+
+The macOS app is built using Xcode with SwiftUI:
+
+```bash
+make macos
+```
+
+<Warning>
+  The core library must be built first. Run `make core` if you get a "library not found" error.
+</Warning>
+
+#### Build Output
+
+The built application is located at:
+```
+platforms/macos/build/Release/GoNhanh.app
+```
+
+#### Xcode Configuration
+
+The build uses these Xcode settings:
+- **Configuration**: Release
+- **Architectures**: arm64, x86_64 (universal)
+- **Deployment Target**: macOS 13.0+
+- **Signing**: Ad-hoc for development
+
+### Linux Build
+
+<Note>
+  Linux support is currently in beta.
+</Note>
+
+```bash
+make build-linux
+```
+
+This builds the Fcitx5 input method plugin.
+
+## Build Configurations
+
+### Development Build
+
+Standard build with ad-hoc signing:
+
+```bash
+./scripts/build/macos.sh
+```
+
+Features:
+- Ad-hoc code signing (runs on your machine only)
+- Debug symbols included
+- Fast iteration
+
+### Release Build with Signing
+
+For distribution with Developer ID:
+
+```bash
+./scripts/build/macos.sh --sign
+```
+
+Requirements:
+- Developer ID Application certificate in Keychain
+- Or set `APPLE_SIGNING_IDENTITY` environment variable
+
+<CodeGroup>
+```bash Auto-detect certificate
+./scripts/build/macos.sh --sign
+```
+
+```bash Specify certificate
+export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAM_ID)"
+./scripts/build/macos.sh --sign
+```
+</CodeGroup>
+
+### Notarized Build
+
+For public distribution on macOS:
+
+```bash
+./scripts/build/macos.sh --notarize
+```
+
+Required environment variables:
+
+```bash
+export APPLE_ID="your@email.com"
+export APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+export APPLE_TEAM_ID="XXXXXXXXXX"
+```
+
+<Steps>
+  <Step title="Get an App-Specific Password">
+    1. Go to [appleid.apple.com](https://appleid.apple.com)
+    2. Sign in with your Apple ID
+    3. Generate an app-specific password
+  </Step>
+
+  <Step title="Find your Team ID">
+    Check your Apple Developer account or run:
+    ```bash
+    xcrun altool --list-providers -u "your@email.com" -p "your-app-password"
+    ```
+  </Step>
+
+  <Step title="Run notarization">
+    ```bash
+    ./scripts/build/macos.sh --notarize
+    ```
+    
+    This process takes 5-15 minutes.
+  </Step>
+</Steps>
+
+### Custom Version Build
+
+Build with a specific version number:
+
+```bash
+./scripts/build/macos.sh --version 1.2.3
+```
+
+Useful for:
+- Testing update mechanisms
+- Pre-release builds
+- Custom distributions
+
+## Build Scripts
+
+Understanding the build scripts:
+
+### Core Build Script
+
+Location: `scripts/build/core.sh`
+
+```bash
+#!/bin/bash
+set -e
+
+echo "🦀 Building Rust core..."
+
+cd core
+
+# Build for Apple Silicon
+cargo build --release --target aarch64-apple-darwin
+
+# Build for Intel
+cargo build --release --target x86_64-apple-darwin
+
+# Create universal binary
+lipo -create \
+    target/aarch64-apple-darwin/release/libgonhanh_core.a \
+    target/x86_64-apple-darwin/release/libgonhanh_core.a \
+    -output ../platforms/macos/libgonhanh_core.a
+```
+
+The universal binary ensures the app runs natively on both architectures.
+
+### macOS Build Script
+
+Location: `scripts/build/macos.sh`
+
+Key features:
+- Version management (git tags or custom)
+- Code signing (ad-hoc, Developer ID, or notarized)
+- Xcode integration
+- Automatic permission handling
+
+## Cargo Configuration
+
+The Rust core uses optimized release settings:
+
+```toml
+[profile.release]
+opt-level = "z"          # Optimize for size
+lto = true               # Link-time optimization
+codegen-units = 1        # Better optimization
+strip = true             # Strip symbols
+panic = "abort"          # Smaller binary
+```
+
+This produces a minimal binary size (~2-3 MB) while maintaining performance.
+
+## Installation
+
+### Install to /Applications
+
+After building, install the app:
+
+```bash
+make install
+```
+
+This:
+1. Removes old login items pointing to build directory
+2. Kills any running instances
+3. Copies the app to `/Applications/`
+4. Launches the installed app
+
+### Create DMG Installer
+
+Create a distributable DMG:
+
+```bash
+make dmg
+```
+
+The DMG includes:
+- GoNhanh.app
+- Custom background
+- Shortcut to Applications folder
+- License information
+
+## Troubleshooting
+
+### Common Build Issues
+
+<AccordionGroup>
+  <Accordion title='"Library not found: libgonhanh_core.a"'>
+    The Rust core hasn't been built yet.
+    
+    **Solution:**
+    ```bash
+    make core
+    ```
+  </Accordion>
+
+  <Accordion title='"Failed to find Xcode"'>
+    Xcode Command Line Tools aren't installed.
+    
+    **Solution:**
+    ```bash
+    xcode-select --install
+    ```
+  </Accordion>
+
+  <Accordion title='"Rust target not found"'>
+    Required compilation targets aren't installed.
+    
+    **Solution:**
+    ```bash
+    make setup
+    ```
+  </Accordion>
+
+  <Accordion title='"Permission denied" on scripts'>
+    Build scripts aren't executable.
+    
+    **Solution:**
+    ```bash
+    chmod +x scripts/**/*.sh
+    ```
+  </Accordion>
+
+  <Accordion title="All tests pass locally but fail on CI">
+    Rust version mismatch.
+    
+    **Solution:**
+    Check your Rust version:
+    ```bash
+    rustc --version
+    ```
+    
+    Update if needed:
+    ```bash
+    rustup update
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Runtime Issues
+
+<AccordionGroup>
+  <Accordion title="IME not typing anything">
+    Missing Accessibility permission.
+    
+    **Solution:**
+    1. Go to **System Settings → Privacy & Security → Accessibility**
+    2. Add GoNhanh to the list
+    3. Enable the toggle
+  </Accordion>
+
+  <Accordion title="Keyboard hook crashes app">
+    Outdated Xcode tools.
+    
+    **Solution:**
+    ```bash
+    xcode-select --install
+    ```
+  </Accordion>
+
+  <Accordion title="Settings not saving">
+    Preferences file corruption.
+    
+    **Solution:**
+    ```bash
+    defaults delete org.gonhanh.GoNhanh
+    ```
+    
+    Then restart the app.
+  </Accordion>
+</AccordionGroup>
+
+## Clean Build
+
+Start fresh by removing all build artifacts:
+
+```bash
+make clean
+```
+
+This removes:
+- Rust target directory (`core/target/`)
+- macOS build directory (`platforms/macos/build/`)
+- Linux build directory (`platforms/linux/build/`)
+- App preferences
+- Login items pointing to build directory
+
+## Advanced: Manual Xcode Build
+
+For debugging or custom configurations:
+
+<Steps>
+  <Step title="Open the project">
+    ```bash
+    open platforms/macos/GoNhanh.xcodeproj
+    ```
+  </Step>
+
+  <Step title="Configure build scheme">
+    1. **Product → Scheme → Edit Scheme**
+    2. Select **Release** configuration
+    3. Set architectures to **arm64 + x86_64**
+  </Step>
+
+  <Step title="Build and run">
+    Press **Cmd+R** or **Product → Run**
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Learn about the contribution process
+  </Card>
+  
+  <Card title="Code Standards" icon="book" href="/development/code-standards">
+    Follow our coding conventions and best practices
+  </Card>
+</CardGroup>

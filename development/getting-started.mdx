@@ -1,0 +1,231 @@
+---
+title: Getting Started
+description: Set up your development environment for contributing to Gõ Nhanh
+---
+
+This guide will help you set up your development environment and get started with contributing to Gõ Nhanh.
+
+## Prerequisites
+
+Before you begin, ensure you have the following tools installed:
+
+| Tool  | Version | Installation                   |
+| ----- | ------- | ------------------------------ |
+| Rust  | 1.70+   | [rustup.rs](https://rustup.rs) |
+| Xcode | 15+     | App Store                      |
+| macOS | 13+     | System requirement             |
+| Git   | 2.30+   | Pre-installed                  |
+
+<Note>
+  Gõ Nhanh uses Rust for the core input method engine and Swift/SwiftUI for the macOS interface.
+</Note>
+
+## Quick Start
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/khaphanspace/gonhanh.org
+    cd gonhanh.org
+    ```
+  </Step>
+
+  <Step title="Run setup script">
+    The setup script installs Rust targets for cross-compilation:
+    
+    ```bash
+    make setup
+    ```
+    
+    This will:
+    - Install `aarch64-apple-darwin` and `x86_64-apple-darwin` targets
+    - Install `swiftformat` for code formatting
+    - Make build scripts executable
+  </Step>
+
+  <Step title="Verify your setup">
+    Run the test suite to ensure everything is configured correctly:
+    
+    ```bash
+    make test
+    ```
+    
+    This runs 160+ integration tests across the Rust core.
+  </Step>
+
+  <Step title="Build the app">
+    Build both the Rust core and macOS app:
+    
+    ```bash
+    make build
+    ```
+    
+    The app will automatically open after building.
+  </Step>
+</Steps>
+
+## Project Structure
+
+Understanding the codebase structure will help you navigate and contribute:
+
+```
+gonhanh.org/
+├── core/                         # Rust core library (~2068 lines)
+│   ├── Cargo.toml               # Rust manifest
+│   ├── src/
+│   │   ├── lib.rs              # FFI exports (7 functions)
+│   │   ├── data/
+│   │   │   ├── keys.rs         # Virtual key codes
+│   │   │   ├── chars.rs        # Unicode mappings
+│   │   │   └── vowel.rs        # Phonology algorithm
+│   │   ├── engine/
+│   │   │   ├── mod.rs          # Main engine (4-stage pipeline)
+│   │   │   └── buffer.rs       # Typing buffer
+│   │   └── input/
+│   │       ├── telex.rs        # Telex input rules
+│   │       └── vni.rs          # VNI input rules
+│   └── tests/                  # 160+ integration tests
+│
+├── platforms/
+│   └── macos/                  # macOS SwiftUI app (~765 lines)
+│       ├── App.swift           # Entry point
+│       ├── MenuBar.swift       # System tray UI
+│       ├── SettingsView.swift  # Settings interface
+│       ├── RustBridge.swift    # FFI bridge to Rust
+│       └── GoNhanh.xcodeproj/  # Xcode project
+│
+├── scripts/                     # Build automation
+│   ├── build/
+│   ├── setup/
+│   └── test/
+│
+└── docs/                        # Documentation
+    ├── architecture.md
+    └── vietnamese-language-system.md
+```
+
+## Development Workflow
+
+### Making Changes to Rust Core
+
+When working on the input method engine:
+
+```bash
+# Edit files in core/src/
+vim core/src/engine/mod.rs
+
+# Run tests for your changes
+cd core && cargo test
+
+# Test specific module
+cargo test engine::
+
+# See detailed test output
+cargo test -- --nocapture --test-threads=1
+```
+
+### Making Changes to macOS UI
+
+When working on the Swift interface:
+
+```bash
+# Edit Swift files
+vim platforms/macos/SettingsView.swift
+
+# Rebuild the app
+make macos
+
+# Or open in Xcode for debugging
+open platforms/macos/GoNhanh.xcodeproj
+```
+
+## Available Make Commands
+
+The project uses a Makefile for common tasks:
+
+### Development
+
+```bash
+make help        # Show all available commands
+make test        # Run all tests
+make format      # Format code (Rust + Swift)
+make lint        # Run linters (clippy + swiftformat)
+make build       # Full build and open app
+make clean       # Remove build artifacts
+```
+
+### Testing
+
+```bash
+make test        # Standard test suite
+make test-dict   # Dictionary validation tests
+make test-22k    # Heavy tests with 22k Vietnamese words
+make test-100k   # English word tests (100k words)
+```
+
+### Debugging
+
+```bash
+make watch       # Tail debug log in real-time
+make perf        # Check RAM usage and memory leaks
+```
+
+## Code Quality Standards
+
+Before committing your changes:
+
+<Steps>
+  <Step title="Format your code">
+    ```bash
+    make format
+    ```
+    
+    This runs:
+    - `cargo fmt` for Rust
+    - `swiftformat` for Swift
+  </Step>
+
+  <Step title="Check for issues">
+    ```bash
+    make lint
+    ```
+    
+    This runs:
+    - `cargo clippy -- -D warnings` (no warnings allowed)
+    - `swiftformat --lint`
+  </Step>
+
+  <Step title="Run tests">
+    ```bash
+    make test
+    ```
+    
+    All tests must pass before submitting a PR.
+  </Step>
+</Steps>
+
+## Next Steps
+
+Now that you have your environment set up:
+
+<CardGroup cols={2}>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Learn how to build for different platforms
+  </Card>
+  
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Read our contribution guidelines
+  </Card>
+  
+  <Card title="Code Standards" icon="book" href="/development/code-standards">
+    Follow our coding conventions
+  </Card>
+  
+  <Card title="Architecture" icon="sitemap" href="/technical/system-architecture">
+    Understand the system design
+  </Card>
+</CardGroup>
+
+<Note>
+  If you encounter any issues during setup, check the [troubleshooting section](/development/building#troubleshooting) or open an issue on GitHub.
+</Note>

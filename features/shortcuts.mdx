@@ -1,0 +1,415 @@
+---
+title: "Shortcuts"
+description: "Custom text expansion shortcuts for faster typing"
+---
+
+## Overview
+
+Shortcuts (Gõ tắt) allow you to expand abbreviations into full phrases automatically.
+
+```
+vn  + Space → Việt Nam
+ko  + Space → không
+hcm + Space → Hồ Chí Minh
+```
+
+## How It Works
+
+### Trigger Modes
+
+Shortcuts can be triggered in two ways:
+
+<Tabs>
+  <Tab title="Word Boundary" default>
+    **Most common mode** - triggers when you press Space or punctuation after the trigger word.
+    
+    ```
+    Type: vn + Space
+    Result: Việt Nam
+    ```
+    
+    <Info>
+    This is the default mode and recommended for most use cases.
+    </Info>
+  </Tab>
+  
+  <Tab title="Immediate">
+    **Instant mode** - triggers immediately after typing the trigger word (no Space needed).
+    
+    ```
+    Type: dc
+    Result: được (immediately)
+    ```
+    
+    <Warning>
+    Use carefully! Immediate mode may interfere with normal typing if the trigger is a common word prefix.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Smart Case Matching
+
+Shortcuts automatically match the case of your input:
+
+| Input      | Output       | Case Type  |
+|------------|--------------|------------|
+| `vn`       | Việt Nam     | lowercase  |
+| `VN`       | VIỆT NAM     | UPPERCASE  |
+| `Vn`       | Việt Nam     | Title Case |
+| `ko`       | không        | lowercase  |
+| `KO`       | KHÔNG        | UPPERCASE  |
+| `Ko`       | Không        | Title Case |
+
+<Note>
+**Issue #86**: Smart case transformation works for all shortcuts, including Vietnamese diacritics.
+</Note>
+
+## Creating Shortcuts
+
+### Built-in Shortcuts
+
+Gõ Nhanh comes with these default shortcuts:
+
+```rust
+vn  → Việt Nam
+hcm → Hồ Chí Minh
+hn  → Hà Nội
+dc  → được
+ko  → không
+```
+
+<Info>
+Default shortcuts are **currently disabled** in the latest version. You can add them back manually if needed.
+</Info>
+
+### Add Custom Shortcuts
+
+1. Open **Settings → Shortcuts**
+2. Click **+ Add Shortcut**
+3. Enter:
+   - **Trigger**: Short text to type (e.g., `tphcm`)
+   - **Replacement**: Full text to expand (e.g., `Thành phố Hồ Chí Minh`)
+   - **Trigger mode**: Word boundary or Immediate
+   - **Input method**: All, Telex only, or VNI only
+4. Click **Save**
+
+### Shortcut Limits
+
+<CardGroup cols={2}>
+  <Card title="Max Replacement Length" icon="ruler">
+    **255 characters** (UTF-32 codepoints)
+    
+    Each Vietnamese character with diacritics (ồ, ế, ẫ) counts as 1 codepoint.
+  </Card>
+  
+  <Card title="No Trigger Limit" icon="infinity">
+    Trigger can be any length, but keep it short and memorable!
+  </Card>
+</CardGroup>
+
+<Warning>
+**Issue #178**: Shortcuts longer than 255 characters will be **automatically truncated**.
+
+Before this fix, shortcuts were limited to 63 characters.
+</Warning>
+
+## Implementation
+
+Shortcuts are implemented in `core/src/engine/shortcut.rs`:
+
+<CodeGroup>
+
+```rust Shortcut Structure
+pub struct Shortcut {
+    /// Trigger string (lowercase for matching)
+    pub trigger: String,
+    /// Replacement text
+    pub replacement: String,
+    /// When to trigger
+    pub condition: TriggerCondition,
+    /// How to handle case
+    pub case_mode: CaseMode,
+    /// Whether this shortcut is enabled
+    pub enabled: bool,
+    /// Which input method this shortcut applies to
+    pub input_method: InputMethod,
+}
+```
+
+```rust Creating Shortcuts
+// Word boundary trigger (default)
+let shortcut = Shortcut::new("vn", "Việt Nam");
+
+// Immediate trigger
+let shortcut = Shortcut::immediate("dc", "được");
+
+// Telex-specific shortcut
+let shortcut = Shortcut::telex("w", "ư");
+
+// VNI-specific shortcut
+let shortcut = Shortcut::vni("7", "ơ");
+```
+
+```rust Case Matching
+enum CaseMode {
+    /// Keep replacement exactly as defined
+    Exact,
+    /// Match case of trigger: "VN" → "VIỆT NAM", "vn" → "Việt Nam"
+    MatchCase,
+}
+
+fn apply_case(trigger: &str, replacement: &str) -> String {
+    if trigger.chars().all(|c| c.is_uppercase()) {
+        replacement.to_uppercase()
+    } else if trigger.chars().next().unwrap().is_uppercase() {
+        capitalize_first(replacement)
+    } else {
+        replacement.to_string()
+    }
+}
+```
+
+</CodeGroup>
+
+## Input Method Filtering
+
+Shortcuts can be limited to specific input methods:
+
+<Tabs>
+  <Tab title="All Methods" default>
+    ```rust
+    let shortcut = Shortcut::new("vn", "Việt Nam")
+        .for_method(InputMethod::All);
+    
+    // Works in both Telex and VNI
+    ```
+  </Tab>
+  
+  <Tab title="Telex Only">
+    ```rust
+    let shortcut = Shortcut::telex("w", "ư");
+    
+    // Only works when Telex is active
+    // Ignored in VNI mode
+    ```
+  </Tab>
+  
+  <Tab title="VNI Only">
+    ```rust
+    let shortcut = Shortcut::vni("7", "ơ");
+    
+    // Only works when VNI is active
+    // Ignored in Telex mode
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+**Why filter by input method?**
+
+Some triggers might conflict with typing in one method but not the other. For example, `7` is a valid shortcut in VNI but would interfere with normal number typing in Telex.
+</Note>
+
+## Shortcut Matching
+
+### Longest Match First
+
+When multiple shortcuts match, the **longest trigger** wins:
+
+```rust
+Shortcuts:
+  h   → họ
+  hcm → Hồ Chí Minh
+
+Type: hcm + Space
+Result: Hồ Chí Minh  ✓  (not "họ + cm")
+```
+
+### Case-Insensitive Matching
+
+Triggers are matched **case-insensitively**:
+
+```rust
+Shortcut trigger: "ko" → "không"
+
+Matches:
+  ko  ✓
+  Ko  ✓
+  KO  ✓
+  kO  ✓
+```
+
+## Examples
+
+<Accordion title="Common Abbreviations">
+
+```rust
+vn   → Việt Nam
+hcm  → Hồ Chí Minh
+hn   → Hà Nội
+sg   → Sài Gòn
+dn   → Đà Nẵng
+dc   → được
+ko   → không
+k    → không
+j    → vâng
+z    → vậy
+```
+
+</Accordion>
+
+<Accordion title="Email & Addresses">
+
+```rust
+eml   → example@gmail.com
+addr  → 123 Nguyễn Huệ, Q1, TP.HCM
+tel   → 0901234567
+```
+
+</Accordion>
+
+<Accordion title="Frequently Used Phrases">
+
+```rust
+tks    → Cảm ơn
+sry    → Xin lỗi
+brb    → Quay lại sau
+omw    → Đang trên đường
+lgtm   → Trông ổn
+wfh    → Làm việc từ xa
+```
+
+</Accordion>
+
+<Accordion title="Technical Terms">
+
+```rust
+js     → JavaScript
+ts     → TypeScript
+py     → Python
+rs     → Rust
+db     → database
+api    → Application Programming Interface
+```
+
+</Accordion>
+
+<Accordion title="Long Text (Issue #178)">
+
+```rust
+lorem → Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris...
+
+// Supports up to 255 characters (previously 63)
+```
+
+</Accordion>
+
+## Validation & Limits
+
+### Replacement Validation
+
+```rust
+const MAX_REPLACEMENT_LEN: usize = 255; // UTF-32 codepoints
+
+fn validate_replacement(replacement: &str) -> String {
+    let char_count = replacement.chars().count();
+    if char_count <= MAX_REPLACEMENT_LEN {
+        replacement.to_string()
+    } else {
+        // Truncate to 255 codepoints
+        replacement.chars().take(MAX_REPLACEMENT_LEN).collect()
+    }
+}
+```
+
+<Info>
+Vietnamese characters with diacritics (ồ, ế, ẫ, ơ, ư) each count as **1 codepoint**, not multiple bytes.
+</Info>
+
+## Disabling Shortcuts
+
+To temporarily disable a shortcut without deleting it:
+
+1. Open **Settings → Shortcuts**
+2. Find the shortcut in the list
+3. Uncheck the **Enabled** checkbox
+4. Click **Save**
+
+Disabled shortcuts are kept in storage but won't trigger.
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Shortcut doesn't trigger">
+1. Check if it's **enabled** in Settings
+2. Make sure you're using the correct **trigger mode** (word boundary vs immediate)
+3. Verify the **input method filter** (All/Telex/VNI)
+4. Try toggling Vietnamese mode OFF and ON
+</Accordion>
+
+<Accordion title="Case doesn't match">
+Ensure **CaseMode** is set to `MatchCase` (default). If you want exact output, change it to `Exact`.
+</Accordion>
+
+<Accordion title="Replacement is truncated">
+Your replacement text exceeds **255 characters**. Either shorten it or split it into multiple shortcuts.
+</Accordion>
+
+<Accordion title="Shortcut conflicts with typing">
+Change from **Immediate** to **Word Boundary** mode, or choose a less common trigger.
+</Accordion>
+
+</AccordionGroup>
+
+## Comparison with Other IMEs
+
+| Feature                  | Gõ Nhanh | UniKey | OpenKey | EVKey |
+|--------------------------|----------|--------|---------|-------|
+| Custom shortcuts         | ✅       | ✅     | ✅      | ✅    |
+| Smart case matching      | ✅       | ❌     | ❌      | ❌    |
+| Input method filtering   | ✅       | ❌     | ❌      | ❌    |
+| Max replacement length   | 255      | 63     | 128     | 100   |
+| Immediate trigger mode   | ✅       | ✅     | ❌      | ✅    |
+| Word boundary mode       | ✅       | ✅     | ✅      | ✅    |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Triggers Short" icon="minimize">
+    Use 2-5 character triggers for best usability.
+    
+    Good: `vn`, `hcm`, `ko`
+    
+    Bad: `vietnamcountry`, `hochiminhcity`
+  </Card>
+  
+  <Card title="Avoid Conflicts" icon="triangle-exclamation">
+    Don't use triggers that are common word prefixes.
+    
+    Good: `tphcm` (unique)
+    
+    Bad: `th` (conflicts with "thì", "thế", "thực"...)
+  </Card>
+  
+  <Card title="Use Word Boundary" icon="check">
+    Prefer word boundary mode over immediate for most shortcuts.
+    
+    Safer and less intrusive.
+  </Card>
+  
+  <Card title="Test First" icon="flask">
+    Test new shortcuts in a text editor before using them in important documents.
+  </Card>
+</CardGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Input Methods" icon="keyboard" href="/features/input-methods">
+    Learn about Telex and VNI
+  </Card>
+  <Card title="Auto-Restore" icon="rotate-left" href="/features/auto-restore">
+    Automatic English word restoration
+  </Card>
+</CardGroup>

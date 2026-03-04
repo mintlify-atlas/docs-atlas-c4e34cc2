@@ -1,0 +1,347 @@
+---
+title: "Settings Guide"
+description: "Complete guide to all configuration options in Gõ Nhanh"
+---
+
+# Settings Guide
+
+This guide covers all settings available in Gõ Nhanh, including basic typing preferences, keyboard shortcuts, Vietnamese orthography rules, and system settings.
+
+## Accessing Settings
+
+To open settings:
+1. Click the Gõ Nhanh icon in the menu bar
+2. Select **Cài đặt** (Settings)
+
+The settings window has three tabs:
+- **Cài đặt** (Settings) - Main configuration
+- **Nâng cao** (Advanced) - Per-app profiles and performance
+- **Giới thiệu** (About) - App information
+
+---
+
+## Bộ gõ (Input Method)
+
+### Enable/Disable Vietnamese Input
+
+**Bộ gõ tiếng Việt** - Toggle Vietnamese input on or off.
+
+When enabled, Gõ Nhanh transforms your keystrokes into Vietnamese characters with diacritics.
+
+**Default:** Enabled
+
+<Note>
+You can also toggle this using the keyboard shortcut (default: ⌘ + Space).
+</Note>
+
+### Kiểu gõ (Input Mode)
+
+Select your preferred input method:
+
+<Tabs>
+  <Tab title="Telex">
+    Uses letter keys for diacritics:
+    - `s` = sắc (acute)
+    - `f` = huyền (grave)
+    - `r` = hỏi (hook above)
+    - `x` = ngã (tilde)
+    - `j` = nặng (dot below)
+    - `w` = horn (ơ, ư) / breve (ă)
+    - `aa`, `ee`, `oo` = circumflex (â, ê, ô)
+    - `dd` = đ
+
+    **Examples:**
+    - `Viet` + `e` → `Vieet` → `Việt`
+    - `Ha` + `a` → `Haa` + `f` → `Hà`
+  </Tab>
+  <Tab title="VNI">
+    Uses number keys for diacritics:
+    - `1` = sắc (acute)
+    - `2` = huyền (grave)
+    - `3` = hỏi (hook above)
+    - `4` = ngã (tilde)
+    - `5` = nặng (dot below)
+    - `6` = circumflex (â, ê, ô)
+    - `7` = horn (ơ, ư)
+    - `8` = breve (ă)
+    - `9` = đ
+
+    **Examples:**
+    - `Vie65t` → `Việt`
+    - `Ha2` → `Hà`
+  </Tab>
+</Tabs>
+
+**Default:** Telex
+
+### Telex-Specific Options
+
+These options only appear when **Telex** is selected:
+
+#### Gõ W thành Ư
+
+**Auto W Shortcut** - Transform standalone `w` into `ư` without another vowel.
+
+When enabled:
+- `w` → `ư` (standalone)
+- `ow` → `ơ` (after o)
+- `uw` → `ư` (after u)
+
+**Default:** Enabled
+
+<Warning>
+Disabling this requires typing `uw` for `ư`, which can be slower.
+</Warning>
+
+#### Gõ [ ] thành Ơ Ư
+
+**Bracket Shortcut** - Use `[` for `ơ` and `]` for `ư`.
+
+When enabled:
+- `[` → `ơ`
+- `]` → `ư`
+
+Useful when typing English text with Vietnamese input enabled, as it avoids accidental diacritic insertion.
+
+**Default:** Disabled
+
+#### Tự khôi phục tiếng Anh
+
+**English Auto-Restore** - Automatically restore English words that accidentally received Vietnamese diacritics.
+
+When enabled, Gõ Nhanh detects common English patterns and removes diacritics:
+
+| Input | Without Auto-Restore | With Auto-Restore |
+|-------|---------------------|-------------------|
+| `text` | `têt` | `text` |
+| `expect` | `ễpct` | `expect` |
+| `perfect` | `pềct` | `perfect` |
+| `with` | `ưith` | `with` |
+
+**Default:** Disabled
+
+<Info>
+Alternatively, press **ESC** after typing to manually restore the last word.
+</Info>
+
+---
+
+## Phím tắt (Keyboard Shortcuts)
+
+### Bật/tắt bộ gõ
+
+**Toggle Vietnamese Input** - Shortcut to enable/disable Vietnamese input.
+
+Click the shortcut display to record a new combination. Press the desired key combination, and it will be saved automatically.
+
+**Default:** ⌘ + Space
+
+<Warning>
+Avoid using system shortcuts like ⌘⇧3 (screenshot) or ⌃↑ (Mission Control).
+</Warning>
+
+### Hoàn tác dấu vừa gõ
+
+**Restore Shortcut** - Undo the last diacritic or restore an English word.
+
+This shortcut must be **enabled** using the toggle switch.
+
+**Default:** ESC (disabled)
+
+**When enabled:**
+- Removes the most recent diacritic
+- Restores accidentally transformed English words
+
+**Example:**
+```
+Type: user → úẻ
+Press ESC → user
+```
+
+---
+
+## Quy tắc gõ (Typing Rules)
+
+These settings affect Vietnamese orthography and validation.
+
+### Đặt dấu kiểu mới
+
+**Modern Tone Placement** - Use modern Vietnamese tone placement rules.
+
+**Kiểu mới (Modern)** places tone marks according to phonetic principles:
+- `hoà` (not `hòa`)
+- `khoẻ` (not `khỏe`)
+- `thuỷ` (not `thủy`)
+
+**Kiểu cũ (Traditional)** places tone marks for visual balance:
+- `hòa`, `khỏe`, `thủy`
+
+**Default:** Enabled (Modern)
+
+<Accordion title="Why two styles?">
+The modern style follows the **2018 Ministry of Education** guidelines, which align tone marks with International Phonetic Alphabet (IPA) principles. The traditional style is based on pre-1950 dictionaries and prioritizes visual aesthetics.
+
+Both styles are correct and widely used in Vietnam.
+</Accordion>
+
+### Cho phép phụ âm ngoại
+
+**Allow Foreign Consonants** - Allow `z`, `w`, `j`, `f` as initial consonants.
+
+When **enabled**, these letters can start a syllable (useful for loanwords and names):
+- `zoo`, `wifi`, `jazz`, `fifa`
+
+When **disabled**, these letters only function as diacritic keys.
+
+**Default:** Disabled
+
+### Tự viết hoa đầu câu
+
+**Auto-Capitalize** - Automatically capitalize the first letter after sentence-ending punctuation.
+
+Capitalizes after:
+- Period (`.`)
+- Exclamation mark (`!`)
+- Question mark (`?`)
+- Enter key
+
+**Example:**
+```
+Type: ok. b → ok. B
+```
+
+You can exclude specific apps from auto-capitalization:
+1. Open **Advanced** settings
+2. Focus on the app you want to exclude
+3. Check **Loại trừ app này khỏi tự động viết hoa**
+
+**Default:** Disabled
+
+---
+
+## Mở rộng (Extensions)
+
+### Bảng gõ tắt
+
+**Shortcuts** - Define text expansion shortcuts.
+
+Create abbreviations that expand to full phrases:
+
+| Shortcut | Expands to |
+|----------|------------|
+| `vn` | Việt Nam |
+| `tphcm` | Thành phố Hồ Chí Minh |
+| `ko` | không |
+
+Click **Quản lý gõ tắt** to open the shortcuts editor.
+
+<Accordion title="Managing Shortcuts">
+**Adding shortcuts:**
+1. Enter the shortcut trigger in **Viết tắt**
+2. Enter the replacement text in **Nội dung**
+3. Click **Thêm**
+
+**Importing/Exporting:**
+- Click **Nhập** to import from a `.txt` file
+- Click **Xuất** to export your shortcuts
+
+**File format:**
+```
+;Gõ Nhanh - Bảng gõ tắt
+vn:Việt Nam
+tphcm:Thành phố Hồ Chí Minh
+ko:không
+```
+</Accordion>
+
+### Nhớ trạng thái theo app
+
+**Per-App Mode** - Remember Vietnamese input state for each application.
+
+When enabled, Gõ Nhanh automatically:
+- **Enables** Vietnamese when switching to apps where you previously had it on
+- **Disables** Vietnamese when switching to apps where you previously had it off
+
+**Example workflow:**
+1. Turn Vietnamese **ON** in Slack
+2. Turn Vietnamese **OFF** in VS Code
+3. Switch between apps → state automatically restores
+
+**Default:** Enabled
+
+<Note>
+Per-app state is separate from per-app profiles. See [Per-App Configuration](/configuration/per-app-config) for delay and injection method overrides.
+</Note>
+
+### Âm thanh khi bật/tắt
+
+**Toggle Sound** - Play a sound effect when enabling/disabling Vietnamese input.
+
+- **Enable:** "Tink" sound
+- **Disable:** "Pop" sound
+
+**Default:** Disabled
+
+---
+
+## Hệ thống (System)
+
+### Tự khởi động cùng macOS
+
+**Launch at Login** - Start Gõ Nhanh automatically when you log in.
+
+**Default:** Enabled (auto-enabled on first launch)
+
+<Warning>
+If auto-enable fails, you'll see a message prompting you to enable it manually in System Settings → General → Login Items.
+</Warning>
+
+### Hiển thị cài đặt nâng cao
+
+**Advanced Mode** - Show the **Nâng cao** (Advanced) tab.
+
+When enabled, the advanced tab appears with:
+- Per-app delay and injection profiles
+- Performance settings
+- Debug logging
+
+**Default:** Disabled
+
+<Info>
+Advanced settings are recommended for power users experiencing compatibility issues with specific applications.
+</Info>
+
+---
+
+## Settings File Location
+
+All settings are stored in macOS `UserDefaults`:
+
+```swift
+~/Library/Preferences/vn.khaphan.GoNhanh.plist
+```
+
+<Accordion title="Settings Keys Reference">
+Key settings and their internal identifiers:
+
+| Setting | Key |
+|---------|-----|
+| Enabled | `enabled` |
+| Input Method | `method` |
+| Modern Tone | `modernTone` |
+| Auto W Shortcut | `autoWShortcut` |
+| Bracket Shortcut | `bracketShortcut` |
+| English Auto-Restore | `englishAutoRestore` |
+| Auto-Capitalize | `autoCapitalize` |
+| Per-App Mode | `perAppMode` |
+| Sound Enabled | `soundEnabled` |
+| Allow Foreign Consonants | `allowForeignConsonants` |
+| Advanced Mode | `advancedMode` |
+</Accordion>
+
+---
+
+## Related Documentation
+
+- [Per-App Configuration](/configuration/per-app-config) - Configure delay and injection methods per app
+- [Tone Placement](/configuration/tone-placement) - Vietnamese tone placement rules

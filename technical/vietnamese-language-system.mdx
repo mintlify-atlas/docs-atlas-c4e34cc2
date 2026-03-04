@@ -1,0 +1,496 @@
+---
+title: Vietnamese Language System
+description: Comprehensive reference for Vietnamese orthography, phonology, and input method foundations
+---
+
+## Overview
+
+Vietnamese (Tiếng Việt) uses the Latin-based Quốc Ngữ writing system with extensive diacritics to represent tones and special vowels. Understanding this system is essential for implementing Vietnamese input methods.
+
+## Alphabet
+
+### Vietnamese Alphabet (29 letters)
+
+<Tabs>
+  <Tab title="Standard Letters (22)">
+    | Uppercase | Lowercase | Name |
+    |-----------|-----------|------|
+    | A | a | a |
+    | B | b | bê |
+    | C | c | xê |
+    | D | d | dê |
+    | E | e | e |
+    | G | g | giê |
+    | H | h | hát |
+    | I | i | i |
+    | K | k | ca |
+    | L | l | e-lờ |
+    | M | m | em-mờ |
+    | N | n | en-nờ |
+    | O | o | o |
+    | P | p | pê |
+    | Q | q | cu/quy |
+    | R | r | e-rờ |
+    | S | s | ét-sì |
+    | T | t | tê |
+    | U | u | u |
+    | V | v | vê |
+    | X | x | ích-xì |
+    | Y | y | i dài |
+  </Tab>
+
+  <Tab title="Special Letters (7)">
+    | Uppercase | Lowercase | Name | Description |
+    |-----------|-----------|------|-------------|
+    | Ă | ă | á | A with breve |
+    | Â | â | ớ | A with circumflex |
+    | Đ | đ | đê | D with stroke |
+    | Ê | ê | ê | E with circumflex |
+    | Ô | ô | ô | O with circumflex |
+    | Ơ | ơ | ơ | O with horn |
+    | Ư | ư | ư | U with horn |
+  </Tab>
+</Tabs>
+
+<Warning>
+  The letters **F, J, W, Z** are not part of the Vietnamese alphabet but appear in loanwords and foreign names.
+</Warning>
+
+## Vowel System
+
+### Simple Vowels (12)
+
+<Tabs>
+  <Tab title="By Position">
+    | Position | Front | Central | Back |
+    |----------|-------|---------|------|
+    | **High** | i | ư | u |
+    | **Mid-high** | ê | ơ | ô |
+    | **Mid-low** | e | â, ă | o |
+    | **Low** | | a | |
+  </Tab>
+
+  <Tab title="By Rounding">
+    | Openness | Unrounded | Rounded |
+    |----------|-----------|----------|
+    | **Close** | i, ư | u |
+    | **Mid-close** | ê, ơ | ô |
+    | **Mid-open** | e, â, ă | o |
+    | **Open** | a | |
+  </Tab>
+
+  <Tab title="Details">
+    | Vowel | IPA | Description | Examples |
+    |-------|-----|-------------|----------|
+    | a | /aː/ | Open, long | ba, ca, ma |
+    | ă | /a/ | Open, short | ăn, căn, măng |
+    | â | /ə/ | Mid-open, central | ân, cân, tân |
+    | e | /ɛ/ | Mid-open, front | em, len, hen |
+    | ê | /e/ | Mid-close, front | ếch, bên, tên |
+    | i | /i/ | Close, front | in, kim, tim |
+    | o | /ɔ/ | Mid-open, back | on, con, lon |
+    | ô | /o/ | Mid-close, back | ông, công, bông |
+    | ơ | /əː/ | Mid-close, central | ơn, sơn, đơn |
+    | u | /u/ | Close, back | un, cun, bun |
+    | ư | /ɨ/ | Close, central | ưng, dưng, hưng |
+    | y | /i/ | Close, front (like i) | y tá, ý kiến |
+  </Tab>
+</Tabs>
+
+### Diphthongs (27 patterns)
+
+<AccordionGroup>
+  <Accordion title="Rising Diphthongs (6)">
+    First vowel is glide, second is main vowel:
+
+    | Pattern | IPA | Examples | Notes |
+    |---------|-----|----------|-------|
+    | ia | /iə/ | kia, mía, lía | Open vowel |
+    | iê | /iə/ | tiên, kiên, liên | Compound vowel |
+    | ua | /uə/ | mua, cua, lua | Open vowel |
+    | uô | /uə/ | muốn, cuốn, luôn | Compound vowel |
+    | ưa | /ɨə/ | mưa, cửa, lửa | Open vowel |
+    | ươ | /ɨə/ | mương, người, được | Compound vowel |
+  </Accordion>
+
+  <Accordion title="Falling to -i/-y (9)">
+    First vowel is main, second is semi-vowel ending:
+
+    | Pattern | IPA | Examples |
+    |---------|-----|----------|
+    | ai | /aj/ | hai, mai, tai |
+    | ay | /aj/ | hay, may, say |
+    | ây | /əj/ | đây, cây, mây |
+    | oi | /ɔj/ | coi, đói, nói |
+    | ôi | /oj/ | tôi, hội, đối |
+    | ơi | /əːj/ | bơi, chơi, rơi |
+    | ui | /uj/ | núi, dui, cúi |
+    | ưi | /ɨj/ | gửi, lửi |
+    | iu | /iw/ | dịu, kíu, tiu |
+  </Accordion>
+
+  <Accordion title="Falling to -u/-o (6)">
+    | Pattern | IPA | Examples |
+    |---------|-----|----------|
+    | ao | /aw/ | cao, sao, nao |
+    | au | /aw/ | sau, mau, dâu |
+    | âu | /əw/ | đâu, câu, sâu |
+    | êu | /ew/ | kêu, rêu, nêu |
+    | eo | /ɛw/ | keo, theo, treo |
+    | ưu | /ɨw/ | lưu, hưu, ngưu |
+  </Accordion>
+
+  <Accordion title="Medial + Main (6)">
+    First vowel is glide (not main vowel):
+
+    | Pattern | IPA | Glide | Main | Examples | Condition |
+    |---------|-----|-------|------|----------|----------|
+    | oa | /wa/ | o | a | hoa, toa, loa | After consonant |
+    | oă | /wa/ | o | ă | xoắn, loắt, hoặc | After consonant |
+    | oe | /wɛ/ | o | e | khoe, xoe, toe | After consonant |
+    | uê | /wə/ | u | ê | huệ, tuệ | |
+    | uy | /uj/ | u | y | quy, huy, tuy | |
+    | uâ | /wə/ | u | â | luân, tuân, quân | Rare |
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  **Special case: "ua"**
+  - After "q" (qua, quả): u is glide, a is main → tone on a
+  - Open syllable without "q" (mua, cua): u is main, a is semi-vowel → tone on u
+  - Closed syllable with final (chuẩn, thuận): u is glide, â is main → tone on â
+</Note>
+
+### Triphthongs (10 patterns)
+
+| Pattern | IPA | Structure | Examples | Tone position |
+|---------|-----|-----------|----------|---------------|
+| iêu | /iəw/ | i + ê + u | tiêu, kiều, liêu | ê (middle) |
+| yêu | /iəw/ | y + ê + u | yêu, yếu | ê (middle) |
+| oai | /waj/ | o + a + i | ngoài, loại, hoài | a (middle) |
+| oay | /waj/ | o + a + y | xoay, ngoáy | a (middle) |
+| oeo | /wɛw/ | o + e + o | khoèo, ngoẹo | e (middle) |
+| uây | /uəj/ | u + â + y | khuấy, quậy | â (middle) |
+| uôi | /uəj/ | u + ô + i | cuối, tuổi, buổi | ô (middle) |
+| ươi | /ɨəj/ | ư + ơ + i | mười, tươi, lười | ơ (middle) |
+| ươu | /ɨəw/ | ư + ơ + u | rượu, hươu, bướu | ơ (middle) |
+| uyê | /uiə/ | u + y + ê | khuyên, chuyên, quyền | ê (final) |
+
+## Consonant System
+
+### Initial Consonants
+
+<Tabs>
+  <Tab title="Single (17)">
+    | Consonant | IPA | Position | Manner | Examples |
+    |-----------|-----|----------|--------|----------|
+    | b | /ɓ/ | Labial | Implosive | ba, bé |
+    | c | /k/ | Velar | Stop | ca, có |
+    | d | /z/ (N) /j/ (S) | Alveolar | Fricative | da, dê |
+    | đ | /ɗ/ | Alveolar | Implosive | đi, đó |
+    | g | /ɣ/ | Velar | Fricative | gà, gỗ |
+    | h | /h/ | Glottal | Fricative | hoa, hát |
+    | k | /k/ | Velar | Stop | kéo, kê |
+    | l | /l/ | Alveolar | Lateral | la, lá |
+    | m | /m/ | Labial | Nasal | ma, mẹ |
+    | n | /n/ | Alveolar | Nasal | na, nói |
+    | p | /p/ | Labial | Stop | pin (loan) |
+    | q | /k/ | Velar | Stop (always qu) | qua, quê |
+    | r | /z/ (N) /r/ (S) | Alveolar | Trill/Fricative | ra, rồi |
+    | s | /s/ | Alveolar | Fricative | sa, sao |
+    | t | /t/ | Alveolar | Stop | ta, tôi |
+    | v | /v/ | Labiodental | Fricative | va, về |
+    | x | /s/ | Alveolar | Fricative | xa, xanh |
+  </Tab>
+
+  <Tab title="Double (11)">
+    | Consonant | IPA | Description | Examples |
+    |-----------|-----|-------------|----------|
+    | ch | /c/ | Palatal stop | cha, chị |
+    | gh | /ɣ/ | Like g, before e/ê/i | ghe, ghi |
+    | gi | /z/ (N) /j/ (S) | Like d | gia, giờ |
+    | kh | /x/ | Velar fricative | khi, khô |
+    | ng | /ŋ/ | Velar nasal | nga, ngồi |
+    | nh | /ɲ/ | Palatal nasal | nha, nhớ |
+    | ph | /f/ | Labiodental fricative | pha, phố |
+    | qu | /kw/ | Velar + labial | qua, quê |
+    | th | /tʰ/ | Aspirated alveolar | tha, thì |
+    | tr | /c/ (N) /ʈ/ (S) | Retroflex | tra, trong |
+    | kr | /kr/ | Ethnic minority | Krông |
+  </Tab>
+
+  <Tab title="Triple (1)">
+    | Consonant | IPA | Description | Examples |
+    |-----------|-----|-------------|----------|
+    | ngh | /ŋ/ | Like ng, before e/ê/i | nghe, nghĩ |
+  </Tab>
+</Tabs>
+
+### Final Consonants
+
+| Consonant | IPA | Examples |
+|-----------|-----|----------|
+| c | /k/ | các, học |
+| ch | /c/ | ách, ích |
+| m | /m/ | cam, tâm |
+| n | /n/ | can, tân |
+| ng | /ŋ/ | cang, tang |
+| nh | /ɲ/ | anh, inh |
+| p | /p/ | cập, tập |
+| t | /t/ | cát, tất |
+| k | /k/ | Ethnic minority names | Đắk Lắk |
+
+### Orthographic Rules
+
+<AccordionGroup>
+  <Accordion title="C / K / Q Distribution">
+    ```
+    C before: a, ă, â, o, ô, ơ, u, ư
+    K before: e, ê, i, y
+    Q always with U: qu
+
+    Examples:
+    ✓ ca, cô, cu, căn, cơm
+    ✓ kẻ, kê, ki, ký
+    ✓ qua, quê, quy, quả
+    ✗ ce, ci (must use: ke, ki)
+    ✗ ka, ko (must use: ca, co)
+    ```
+  </Accordion>
+
+  <Accordion title="G / GH Distribution">
+    ```
+    G before: a, ă, â, o, ô, ơ, u, ư
+    GH before: e, ê, i
+
+    Examples:
+    ✓ gà, gỗ, gương
+    ✓ ghe, ghế, ghi
+    ✗ ge, gi (if /ɣ/ sound, must use: ghe, ghi)
+    Note: "gi" is a separate consonant /z/, not /ɣ/
+    ```
+  </Accordion>
+
+  <Accordion title="NG / NGH Distribution">
+    ```
+    NG before: a, ă, â, o, ô, ơ, u, ư
+    NGH before: e, ê, i
+
+    Examples:
+    ✓ ngày, ngồi, ngủ, ngưng
+    ✓ nghe, nghề, nghỉ, nghĩa
+    ✗ nge, ngi (must use: nghe, nghi)
+    ✗ ngha, ngho (must use: nga, ngo)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Tone System
+
+### Six Tones
+
+| # | Name | Mark | IPA | Contour | Example | Description |
+|---|------|------|-----|---------|---------|-------------|
+| 1 | Ngang | (none) | /ma˧/ | ˧ (33) | ma | Level, mid |
+| 2 | Huyền | ` | /ma˨˩/ | ˨˩ (21) | mà | Falling, low |
+| 3 | Sắc | ´ | /ma˧˥/ | ˧˥ (35) | má | Rising, high |
+| 4 | Hỏi | ̉ | /ma˧˩˧/ | ˧˩˧ (313) | mả | Dipping |
+| 5 | Ngã | ~ | /ma˧˥ˀ/ | ˧˥ˀ (35ˀ) | mã | Rising, glottalized |
+| 6 | Nặng | ̣ | /ma˧˩ˀ/ | ˧˩ˀ (21ˀ) | mạ | Falling, glottalized |
+
+### Tone Contours Visualization
+
+```
+High  5 ──────────────────●━━━━━━  Sắc (35)
+      4 ─────────────────/───────
+Mid   3 ────●━━━━━━━━━━━/━━━━━━━━  Ngang (33)
+      2 ─────────────────────────
+Low   1 ─────────────────────────
+
+High  5 ─────────────────────────
+      4 ─────────────────────────
+Mid   3 ────●━━━━━━━━━━━━━━━━━━━━
+      2 ────────\────────────────  Huyền (21)
+Low   1 ─────────●━━━━━━━━━━━━━━━
+
+High  5 ─────────────────────────
+      4 ─────────────────────────
+Mid   3 ────●━━━━━━━━━━━━━●━━━━━━  Hỏi (313)
+      2 ────────\────────/───────
+Low   1 ─────────●━━━━━━━━━━━━━━━
+```
+
+### Tone Placement Rules
+
+Diacritics are placed on the **main vowel** (âm chính) of the syllable.
+
+<CardGroup cols={2}>
+  <Card title="Single Vowel" icon="1">
+    Place on that vowel
+    
+    Examples: bá, bà, bả, bã, bạ
+  </Card>
+
+  <Card title="Double Vowel + Final" icon="2">
+    Place on 2nd vowel
+    
+    Examples: hoán, muốn, giác
+  </Card>
+
+  <Card title="Double Vowel + No Final" icon="2">
+    Place on 1st vowel (or vowel with diacritic)
+    
+    Examples: hòa, mưa, sứa
+  </Card>
+
+  <Card title="Triple Vowel" icon="3">
+    Place on middle vowel
+    
+    Examples: tiêu, oai, ươi
+  </Card>
+</CardGroup>
+
+<Note>
+  **Priority rule:** If a vowel has a diacritic (ă, â, ê, ô, ơ, ư), the tone mark goes on that vowel.
+</Note>
+
+## Input Methods
+
+### Telex
+
+<Tabs>
+  <Tab title="Tone Modifiers">
+    | Key | Function | Result |
+    |-----|----------|--------|
+    | a | aa | â (circumflex) |
+    | e | ee | ê (circumflex) |
+    | o | oo | ô (circumflex) |
+    | w | horn/breve | ơ, ư, ă |
+    | d | dd | đ (stroke) |
+  </Tab>
+
+  <Tab title="Tone Marks">
+    | Key | Mark | Result |
+    |-----|------|--------|
+    | s | sắc | á, é, í, ó, ú, ý |
+    | f | huyền | à, è, ì, ò, ù, ỳ |
+    | r | hỏi | ả, ẻ, ỉ, ỏ, ủ, ỷ |
+    | x | ngã | ã, ẽ, ĩ, õ, ũ, ỹ |
+    | j | nặng | ạ, ẹ, ị, ọ, ụ, ỵ |
+    | z | remove | Remove last mark |
+  </Tab>
+</Tabs>
+
+**Examples:**
+- `Vietnam` → `Vieejt` → `Việt`
+- `duoc` → `duowc` → `dươc`
+- `duowcj` → `được`
+
+### VNI
+
+<Tabs>
+  <Tab title="Tone Modifiers">
+    | Key | Function | Result |
+    |-----|----------|--------|
+    | 6 | circumflex | â, ê, ô |
+    | 7 | horn | ơ, ư |
+    | 8 | breve | ă |
+    | 9 | stroke | đ |
+  </Tab>
+
+  <Tab title="Tone Marks">
+    | Key | Mark | Result |
+    |-----|------|--------|
+    | 1 | sắc | á, é, í, ó, ú, ý |
+    | 2 | huyền | à, è, ì, ò, ù, ỳ |
+    | 3 | hỏi | ả, ẻ, ỉ, ỏ, ủ, ỷ |
+    | 4 | ngã | ã, ẽ, ĩ, õ, ũ, ỹ |
+    | 5 | nặng | ạ, ẹ, ị, ọ, ụ, ỵ |
+    | 0 | remove | Remove last mark |
+  </Tab>
+</Tabs>
+
+**Examples:**
+- `Vietnam` → `Vie65t` → `Việt`
+- `duoc` → `du7o7c` → `dươc`
+- `du7o7c5` → `được`
+
+## Phonotactic Constraints
+
+<Warning>
+  Vietnamese has strict phonotactic rules that determine valid syllable structures.
+</Warning>
+
+### No Consonant Clusters
+
+Vietnamese **does not allow** consonant clusters within a syllable:
+
+```
+INVALID - English/French-style clusters:
+├── *l combinations: bl, cl, fl, gl, pl, sl
+│   └── ✗ "black" → must borrow: "blắc" or "bờ-lắc"
+├── *r combinations: br, cr, dr, fr, gr, pr, str
+│   └── ✗ "press" → must borrow: "prét" or "pờ-rét"
+├── s* combinations: sc, sk, sm, sn, sp, st, sw
+│   └── ✗ "stop" → must borrow: "xtốp"
+└── Final clusters: -nt, -nd, -lt, -lk, -mp, -sk...
+    └── Only allowed: -c, -ch, -m, -n, -ng, -nh, -p, -t
+```
+
+### Tone + Final Consonant Restrictions
+
+**Rule:** Syllables ending in **p, t, c, ch** can only have **sắc** or **nặng** tones:
+
+```
+┌────────────────────────────────────────────────┐
+│         TONE + STOP FINAL CONSTRAINT           │
+├────────────────────────────────────────────────┤
+│                                                │
+│  Final    Valid Tones       Invalid Tones     │
+│  ─────    ───────────       ──────────────    │
+│  -p       sắc, nặng         ngang, huyền,     │
+│  -t       sắc, nặng         hỏi, ngã          │
+│  -c       sắc, nặng                           │
+│  -ch      sắc, nặng                           │
+│                                                │
+│  -m, -n   ALL tones         (no restriction)  │
+│  -ng, -nh ALL tones         (no restriction)  │
+│                                                │
+└────────────────────────────────────────────────┘
+
+EXAMPLES:
+✓ cấp, cập (sắc, nặng + p)
+✓ mát, mạt (sắc, nặng + t)
+✗ cảp, cãp, cap, càp (other tones + p)
+✗ mảt, mãt, mat, màt (other tones + t)
+```
+
+### Vowel + Final Restrictions
+
+```
+┌─────────────────────────────────────────────────┐
+│        VOWEL + FINAL CONSONANT CONSTRAINTS      │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  Final -ch: only after a, ê, i                 │
+│  ├── ✓ ách, êch, ich (sách, bếch, ích)        │
+│  └── ✗ ôch, ơch, uch, ưch                      │
+│                                                 │
+│  Final -nh: only after a, ê, i, y              │
+│  ├── ✓ anh, ênh, inh, ynh                     │
+│  └── ✗ ônh, ơnh, unh, ưnh                      │
+│                                                 │
+│  Final -ng: not after e, ê                     │
+│  ├── ✓ ang, ăng, âng, ong, ông, ơng, ung, ưng │
+│  └── ✗ eng, êng (use -nh instead: anh, ênh)   │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+**References:**
+- Vietnamese Phonology (Wikipedia)
+- Vietnamese Alphabet (Wikipedia)
+- Quốc Ngữ Writing System
+- IPA: International Phonetic Alphabet

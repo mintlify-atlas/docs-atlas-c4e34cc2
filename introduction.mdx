@@ -1,0 +1,156 @@
+---
+title: Welcome to Gõ Nhanh
+description: Modern, high-performance Vietnamese input method for macOS, Linux, and Windows
+mode: custom
+---
+
+<div className="relative overflow-hidden dark:bg-[#0a0e1a] bg-white py-20">
+  <div className="max-w-7xl mx-auto px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold dark:text-white text-gray-900 mb-6">
+          Gõ tiếng Việt<br />nhanh, ổn định
+        </h1>
+        <p className="text-lg sm:text-xl dark:text-gray-300 text-gray-600 mb-8 max-w-2xl">
+          Bộ gõ tiếng Việt miễn phí, hiệu suất cao cho macOS, Linux và Windows. Cài là dùng. Không quảng cáo. Không thu thập dữ liệu.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart"
+            className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-white bg-[#238636] hover:bg-[#2ea043] transition-colors"
+          >
+            Get Started
+          </a>
+          <a 
+            href="/installation/macos"
+            className="inline-flex items-center px-6 py-3 rounded-lg font-semibold dark:text-white text-gray-900 dark:bg-white/10 bg-gray-100 dark:border-white/30 border border-gray-300 dark:hover:bg-white/20 hover:bg-gray-200 transition-colors"
+          >
+            Download for macOS
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="relative">
+          <img 
+            src="https://media.brand.dev/70406c85-a506-4d02-a8ad-13d37873bccb.png" 
+            alt="Gõ Nhanh Logo" 
+            noZoom
+            className="w-full h-auto max-w-md mx-auto"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Quick Start
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Get up and running with Gõ Nhanh in minutes
+  </p>
+  
+  <Steps>
+    <Step title="Install Gõ Nhanh">
+      Download and install via Homebrew or direct download
+      
+      ```bash
+      brew install --cask gonhanh
+      ```
+    </Step>
+    
+    <Step title="Grant accessibility permissions">
+      Open **System Settings → Privacy & Security → Accessibility** and enable Gõ Nhanh
+      
+      <Note>
+        macOS requires accessibility permissions for keyboard input methods to function properly.
+      </Note>
+    </Step>
+    
+    <Step title="Start typing Vietnamese">
+      The app automatically starts after installation. Look for the Gõ Nhanh icon in your menu bar and start typing!
+      
+      <Info>
+        Type `text` and press space — it stays as `text`, not `têt`. Auto-restore handles common English words automatically.
+      </Info>
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Key Features
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Everything you need for fast, accurate Vietnamese typing
+  </p>
+  
+  <CardGroup cols={2}>
+    <Card title="Auto-Restore English" icon="wand-magic-sparkles" href="/features/auto-restore">
+      Type `text`, `expect`, `user` — stays in English when you press space. No need to switch input methods.
+    </Card>
+    <Card title="ESC to Restore" icon="keyboard" href="/features/auto-restore">
+      Made a typo? Press ESC to instantly restore the original English word. No fumbling with input switching.
+    </Card>
+    <Card title="Smart App Switching" icon="brain" href="/features/smart-switching">
+      Remembers your input mode per app. Code in VS Code (off) → Chat in Slack (on) automatically.
+    </Card>
+    <Card title="Telex & VNI" icon="language" href="/features/input-methods">
+      Choose your preferred input method. Modern tone placement follows official Vietnamese rules.
+    </Card>
+    <Card title="Lightning Fast" icon="bolt" href="/features/overview">
+      Under 10ms latency, ~20MB RAM. Built in Rust for maximum performance.
+    </Card>
+    <Card title="Privacy First" icon="shield-check" href="/features/overview">
+      100% offline. No data collection. No telemetry. Your typing stays on your device.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Explore the Documentation
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Learn how to install, configure, and get the most out of Gõ Nhanh
+  </p>
+  
+  <CardGroup cols={3}>
+    <Card title="Installation" icon="download" href="/installation/macos">
+      Platform-specific installation guides for macOS, Linux, and Windows
+    </Card>
+    <Card title="Configuration" icon="sliders" href="/configuration/settings">
+      Customize settings, per-app behavior, and shortcuts
+    </Card>
+    <Card title="Troubleshooting" icon="wrench" href="/troubleshooting/common-issues">
+      Fix common issues and find answers to frequently asked questions
+    </Card>
+    <Card title="Architecture" icon="diagram-project" href="/technical/system-architecture">
+      Deep dive into the system design and core engine
+    </Card>
+    <Card title="Development" icon="code" href="/development/getting-started">
+      Build from source and contribute to the project
+    </Card>
+    <Card title="Vietnamese Language System" icon="book-open" href="/technical/vietnamese-language-system">
+      Understanding the linguistic foundations of Vietnamese input
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border rounded-2xl p-8 sm:p-12 text-center">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+      Ready to get started?
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8 max-w-2xl mx-auto">
+      Install Gõ Nhanh and experience fast, reliable Vietnamese typing in minutes
+    </p>
+    <a 
+      href="/quickstart"
+      className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-white bg-[#238636] hover:bg-[#2ea043] transition-colors"
+    >
+      Get Started
+    </a>
+  </div>
+</div>

@@ -1,0 +1,256 @@
+---
+title: "Auto-Restore"
+description: "Automatic English word restoration when typing with Vietnamese input method"
+---
+
+## What is Auto-Restore?
+
+When typing English words with Telex, some letters are interpreted as Vietnamese diacritics (`s` → sắc, `w` → ư, etc.). **Auto-Restore** automatically detects English patterns and restores the original text when you press Space.
+
+## How It Works
+
+### Comparison: macOS Telex vs Gõ Nhanh
+
+| Input      | macOS Telex  | Gõ Nhanh     |
+|------------|--------------|-------------|
+| `text `    | têt ❌       | text ✅     |
+| `expect `  | ễpct ❌      | expect ✅   |
+| `perfect ` | pềct ❌      | perfect ✅  |
+| `with `    | ưith ❌      | with ✅     |
+| `tesla `   | téla ❌      | tesla ✅    |
+| `luxury `  | lủuy ❌      | luxury ✅   |
+| `case `    | cáe ❌       | case ✅     |
+| `wow `     | ươ ❌        | wow ✅      |
+
+<Note>
+**No need to switch off Vietnamese mode!** Just type normally and press Space.
+</Note>
+
+## Detection Patterns
+
+Gõ Nhanh uses 8 intelligent patterns to detect English words:
+
+### Pattern 1: Modifier + Consonant
+
+```rust
+// English: Modifier (s,f,r,x,j) followed by consonant
+text  → x + t → English ✓
+expect → x + p → English ✓
+perfect → f + c → English ✓
+
+// Vietnamese: Modifier + sonorant (m,n,ng,nh)
+làm → f + m → Vietnamese ✓
+hồng → f + ng → Vietnamese ✓
+```
+
+### Pattern 2: W at Start + Consonant
+
+```rust
+// English: W initial before consonant
+water, window, world → W + consonant → English ✓
+
+// Vietnamese: W before sonorant
+ưng, ưn → W + sonorant → Vietnamese ✓
+```
+
+### Pattern 3: EI Vowel Pair
+
+```rust
+// English: "ei" combination
+their, weird → ei + modifier → English ✓
+
+// Vietnamese: No "ei" diphthong exists
+```
+
+### Pattern 4: P Initial + AI
+
+```rust
+// English: P at word start (rare in Vietnamese)
+pair → P + ai + r → English ✓
+pain → P + ai + n → English ✓
+```
+
+### Pattern 5: W as Final
+
+```rust
+// English: W at word end
+raw, law, saw → vowel + W → English ✓
+
+// Vietnamese: W never appears at end
+```
+
+### Pattern 6: F Initial
+
+```rust
+// English: F at word start
+fix, file, focus → F + ... → English ✓
+
+// Vietnamese: Uses PH for /f/ sound
+phở, phòng → PH (not F) → Vietnamese ✓
+```
+
+### Pattern 7: Modifier + K Ending
+
+```rust
+// English: K at word end with modifier
+risk, disk, task → modifier + K → English ✓
+
+// Vietnamese: K final only in ethnic minority words
+Đắk Lắk → Đ + K (ethnic minority) → Vietnamese ✓
+```
+
+### Pattern 8: Double Vowel + Tone at End
+
+```rust
+// English: Doubled vowels like "oo"
+looks, took → oo + k → English ✓
+
+// Vietnamese: Different pattern (aa → â)
+```
+
+## Manual Restore with ESC
+
+For words that Auto-Restore can't detect, press **ESC** after typing:
+
+```
+Type: user
+Result: úẻ
+Press: ESC
+Restored: user ✓
+```
+
+<Warning>
+ESC restore only works immediately after typing. Once you move the cursor or type more text, it won't work.
+</Warning>
+
+## Limitations
+
+Some English words create **valid Vietnamese patterns** and can't be auto-detected:
+
+| Word   | Telex Result | Reason              |
+|--------|--------------|---------------------|
+| `mix`  | mĩ           | M + ĩ is valid      |
+| `box`  | bõ           | B + õ is valid      |
+| `six`  | sĩ           | S + ĩ is valid      |
+
+**Solution**: Press **ESC** to restore, or temporarily disable Vietnamese mode (⌘+Space).
+
+## Technical Implementation
+
+Auto-Restore is implemented in the core engine:
+
+<CodeGroup>
+
+```rust core/src/engine/validation.rs
+/// English detection patterns
+fn is_likely_english(buffer: &Buffer) -> bool {
+    // Pattern 1: Modifier + consonant (not sonorant)
+    if has_modifier_before_consonant(buffer) {
+        return true;
+    }
+    
+    // Pattern 2: W initial + consonant
+    if starts_with_w_consonant(buffer) {
+        return true;
+    }
+    
+    // ... 6 more patterns
+    
+    false
+}
+```
+
+```rust core/src/data/english_dict.rs
+/// Common English words dictionary (10,000+ words)
+pub const COMMON_WORDS: &[&str] = &[
+    "text", "user", "push", "expect", "with",
+    "perfect", "tesla", "case", "wow", "water",
+    // ... more words
+];
+```
+
+</CodeGroup>
+
+## Examples
+
+<Accordion title="Success Cases (Auto-Restored)">
+
+```
+Input          Intermediate    After Space
+───────────────────────────────────────────
+text           têt             text ✓
+expect         ễpct            expect ✓
+perfect        pềct            perfect ✓
+with           ưith            with ✓
+push           púh             push ✓
+sort           ót              sort ✓
+case           cáe             case ✓
+wow            ươ              wow ✓
+tesla          téla            tesla ✓
+luxury         lủuy            luxury ✓
+```
+
+</Accordion>
+
+<Accordion title="Failure Cases (Need ESC)">
+
+```
+Input    Result    Reason              Solution
+──────────────────────────────────────────────────
+mix      mĩ        Valid Vietnamese    Press ESC
+box      bõ        Valid Vietnamese    Press ESC
+six      sĩ        Valid Vietnamese    Press ESC
+fix      fĩ        Valid Vietnamese    Press ESC
+```
+
+</Accordion>
+
+## Configuration
+
+Auto-Restore is **always enabled** and cannot be disabled. This is by design to provide a seamless bilingual typing experience.
+
+<Info>
+If you prefer to disable Vietnamese input entirely for certain apps, use **Per-App Mode** instead. See [Smart Switching](/features/smart-switching).
+</Info>
+
+## Comparison with Other IMEs
+
+| Feature              | Gõ Nhanh | macOS Telex | UniKey | OpenKey |
+|----------------------|----------|-------------|--------|--------|
+| Auto-Restore English | ✅       | ❌          | ❌     | ❌     |
+| ESC to Restore       | ✅       | ❌          | ✅     | ✅     |
+| Pattern Detection    | 8 types  | N/A         | Basic  | Basic  |
+| Dictionary Lookup    | ✅       | ❌          | ❌     | ❌     |
+
+## FAQ
+
+<AccordionGroup>
+
+<Accordion title="Why doesn't 'mix' auto-restore?">
+Because "mĩ" (M + ĩ) is a valid Vietnamese syllable. Gõ Nhanh cannot distinguish intent without context. Press ESC to restore manually.
+</Accordion>
+
+<Accordion title="Can I add custom English words?">
+No, the English dictionary is built into the engine. However, the 8 pattern-based rules catch most common words automatically.
+</Accordion>
+
+<Accordion title="Does it work with VNI?">
+Yes, Auto-Restore works with both Telex and VNI input methods.
+</Accordion>
+
+<Accordion title="What about proper nouns?">
+Proper nouns follow the same rules. If they match an English pattern, they'll be restored. Use ESC for ambiguous cases.
+</Accordion>
+
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Input Methods" icon="keyboard" href="/features/input-methods">
+    Learn about Telex and VNI
+  </Card>
+  <Card title="Smart Switching" icon="brain" href="/features/smart-switching">
+    Per-app Vietnamese mode
+  </Card>
+</CardGroup>

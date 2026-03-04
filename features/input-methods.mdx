@@ -1,0 +1,445 @@
+---
+title: "Input Methods"
+description: "Telex and VNI input methods with accurate Vietnamese tone placement"
+---
+
+## Overview
+
+Gõ Nhanh supports two popular Vietnamese input methods:
+
+<CardGroup cols={2}>
+  <Card title="Telex" icon="t">
+    Modern, letter-based method using `s`, `f`, `r`, `x`, `j`, `w`, `z`
+  </Card>
+  <Card title="VNI" icon="hashtag">
+    Number-based method using `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `0`
+  </Card>
+</CardGroup>
+
+## Telex Input Method
+
+### Overview
+
+Telex uses **letter keys** that don't exist in Vietnamese (`f`, `j`, `w`, `z`) to add diacritics.
+
+<CodeGroup>
+
+```text Tone Marks
+s = sắc   (acute)
+f = huyền (grave)
+r = hỏi   (hook)
+x = ngã   (tilde)
+j = nặng  (dot below)
+z = remove last diacritic
+```
+
+```text Modifiers
+aa = â  (circumflex on a)
+ee = ê  (circumflex on e)
+oo = ô  (circumflex on o)
+aw = ă  (breve on a)
+ow = ơ  (horn on o)
+uw = ư  (horn on u)
+dd = đ  (stroke on d)
+```
+
+</CodeGroup>
+
+### Examples
+
+<Tabs>
+  <Tab title="Basic Typing">
+    ```
+    Input      Output     Explanation
+    ───────────────────────────────────
+    as         á          a + sắc
+    af         à          a + huyền
+    ar         ả          a + hỏi
+    ax         ã          a + ngã
+    aj         ạ          a + nặng
+    
+    aa         â          a + circumflex
+    aas        ấ          â + sắc
+    
+    aw         ă          a + breve
+    aws        ắ          ă + sắc
+    
+    ow         ơ          o + horn
+    owf        ờ          ơ + huyền
+    
+    uw         ư          u + horn
+    uwf        ừ          ư + huyền
+    
+    dd         đ          d + stroke
+    ```
+  </Tab>
+  
+  <Tab title="Words">
+    ```
+    Input          Output
+    ─────────────────────────
+    Vieetj         Việt
+    tuwf           từ
+    muaf           mưa
+    hoaf           hoà
+    nguwowif       người
+    truowfng       trường
+    ```
+  </Tab>
+  
+  <Tab title="Flexible Order">
+    ```
+    Input      Output     Note
+    ────────────────────────────────────
+    owf        ờ          tone first
+    ofw        ờ          modifier first
+    
+    aas        ấ          tone after modifier
+    asa        ấ          tone before modifier
+    
+    uws        ứ          horn + tone
+    usw        ứ          tone + horn
+    ```
+    
+    <Info>
+    Telex allows **flexible typing order** - you can type tone marks before or after modifiers.
+    </Info>
+  </Tab>
+</Tabs>
+
+### Undo Mechanism
+
+Type the same key twice to undo:
+
+```
+Input    Output    Explanation
+───────────────────────────────
+aaa      âa        aa → â, third 'a' stays
+ass      as        as → á, second 's' removes sắc
+aww      aw        aw → ă, second 'w' removes breve
+oww      ow        ow → ơ, second 'w' removes horn
+```
+
+<Note>
+**Issue #312**: When a vowel already has a modifier (horn/circumflex/breve), typing the same vowel again adds it **raw**, not as a modifier.
+
+Example: `chưa` + `a` → `chưaa` (NOT `chưâ`)
+</Note>
+
+### Implementation
+
+Telex is implemented in `core/src/input/telex.rs`:
+
+```rust
+pub struct Telex;
+
+impl Method for Telex {
+    fn mark(&self, key: u16) -> Option<u8> {
+        match key {
+            keys::S => Some(1), // sắc
+            keys::F => Some(2), // huyền
+            keys::R => Some(3), // hỏi
+            keys::X => Some(4), // ngã
+            keys::J => Some(5), // nặng
+            _ => None,
+        }
+    }
+
+    fn tone(&self, key: u16) -> Option<ToneType> {
+        match key {
+            keys::A | keys::E | keys::O => Some(ToneType::Circumflex),
+            keys::W => Some(ToneType::Horn),
+            _ => None,
+        }
+    }
+
+    fn stroke(&self, key: u16) -> bool {
+        key == keys::D
+    }
+
+    fn remove(&self, key: u16) -> bool {
+        key == keys::Z
+    }
+}
+```
+
+## VNI Input Method
+
+### Overview
+
+VNI uses **number keys** (0-9) to add diacritics.
+
+<CodeGroup>
+
+```text Tone Marks
+1 = sắc   (acute)
+2 = huyền (grave)
+3 = hỏi   (hook)
+4 = ngã   (tilde)
+5 = nặng  (dot below)
+0 = remove last diacritic
+```
+
+```text Modifiers
+6 = ^  (circumflex: a→â, e→ê, o→ô)
+7 = ơ  (horn: o→ơ, u→ư)
+8 = ˘  (breve: a→ă)
+9 = đ  (stroke: d→đ)
+```
+
+</CodeGroup>
+
+### Examples
+
+<Tabs>
+  <Tab title="Basic Typing">
+    ```
+    Input      Output     Explanation
+    ───────────────────────────────────
+    a1         á          a + sắc
+    a2         à          a + huyền
+    a3         ả          a + hỏi
+    a4         ã          a + ngã
+    a5         ạ          a + nặng
+    
+    a6         â          a + circumflex
+    a61        ấ          â + sắc
+    
+    a8         ă          a + breve
+    a81        ắ          ă + sắc
+    
+    o7         ơ          o + horn
+    o72        ờ          ơ + huyền
+    
+    u7         ư          u + horn
+    u72        ừ          ư + huyền
+    
+    d9         đ          d + stroke
+    ```
+  </Tab>
+  
+  <Tab title="Words">
+    ```
+    Input          Output
+    ─────────────────────────
+    Vie65t         Việt
+    tu72           từ
+    mu71           mưa
+    hoa2           hoà
+    ngu7o7i2       người
+    tru7o7ng2      trường
+    ```
+  </Tab>
+  
+  <Tab title="Undo">
+    ```
+    Input    Output    Explanation
+    ─────────────────────────────────
+    a11      a1        Double 1 to undo sắc
+    a66      a6        Double 6 to undo circumflex
+    o77      o7        Double 7 to undo horn
+    a88      a8        Double 8 to undo breve
+    ```
+  </Tab>
+</Tabs>
+
+### Implementation
+
+VNI is implemented in `core/src/input/vni.rs`:
+
+```rust
+pub struct Vni;
+
+impl Method for Vni {
+    fn mark(&self, key: u16) -> Option<u8> {
+        match key {
+            keys::N1 => Some(1), // sắc
+            keys::N2 => Some(2), // huyền
+            keys::N3 => Some(3), // hỏi
+            keys::N4 => Some(4), // ngã
+            keys::N5 => Some(5), // nặng
+            _ => None,
+        }
+    }
+
+    fn tone(&self, key: u16) -> Option<ToneType> {
+        match key {
+            keys::N6 => Some(ToneType::Circumflex),
+            keys::N7 => Some(ToneType::Horn),
+            keys::N8 => Some(ToneType::Breve),
+            _ => None,
+        }
+    }
+
+    fn stroke(&self, key: u16) -> bool {
+        key == keys::N9
+    }
+
+    fn remove(&self, key: u16) -> bool {
+        key == keys::N0
+    }
+}
+```
+
+## Tone Placement Rules
+
+Gõ Nhanh follows **official Vietnamese tone placement rules** (Quy tắc đặt dấu thanh).
+
+### Rule 1: Single Vowel
+
+Tone mark goes directly on the vowel:
+
+```
+bá, bà, bả, bã, bạ
+```
+
+### Rule 2: Two Vowels
+
+Check the pattern in this table:
+
+| Pattern | Tone Position | Example          |
+|---------|---------------|------------------|
+| ai, ay  | **First**     | mái, máy         |
+| ao, au  | **First**     | sáo, sáu         |
+| âu, ây  | **First**     | cấu, cây         |
+| eo, êu  | **First**     | kéo, kêu         |
+| ia, iê  | **Second**    | kía, tiếng       |
+| iu      | **First**     | tíu              |
+| oa, oă  | **Second**    | hoá, xoắn        |
+| oe      | **Second**    | khoé             |
+| oi, ôi  | **First**     | tói, tôi         |
+| ơi      | **First**     | cơi              |
+| ua      | **First/Second** | múa / quá     |
+| uê, uy  | **Second**    | tuế, thuý        |
+| ui, uô  | **First**     | túi, cuốn        |
+| ưa, ươ  | **First**     | mứa, được        |
+| ưi, ưu  | **First**     | gửi, lưu         |
+| yê      | **Second**    | yếu              |
+
+<Note>
+**Special case for "ua"**:
+- After `q`: tone on **a** (quá, quả)
+- Without `q` (open syllable): tone on **u** (múa, cúa)
+- With final consonant: tone on **a** (muán, quán)
+</Note>
+
+### Rule 3: Three Vowels
+
+Tone mark goes on the **middle vowel** (with modifier if present):
+
+| Pattern | Tone Position | Example       |
+|---------|---------------|---------------|
+| iêu     | **ê**         | tiêu, kiều    |
+| yêu     | **ê**         | yêu           |
+| oai     | **a**         | ngoài, loại   |
+| oay     | **a**         | xoáy          |
+| oeo     | **e**         | khoẻo         |
+| uây     | **â**         | khuấy         |
+| uôi     | **ô**         | cuối, tuổi    |
+| ươi     | **ơ**         | mười, tươi    |
+| ươu     | **ơ**         | rượu, hươu    |
+| uyê     | **ê**         | quyền, chuyện |
+
+### Old vs New Style
+
+There are two schools of tone placement for some patterns:
+
+| Pattern | Old Style | New Style | Note                    |
+|---------|-----------|-----------|-------------------------|
+| oa      | hòa       | hoà       | Old: tone on o          |
+| oe      | hòe       | hoè       | New: tone on a/e        |
+| uy      | thùy      | thuỳ      | (per Bộ GD&ĐT 2018)    |
+
+Gõ Nhanh uses the **new style** by default (following Ministry of Education Decision 1989/QĐ-BGDĐT, 2018).
+
+## Validation
+
+Gõ Nhanh validates Vietnamese syllables using a **whitelist approach**:
+
+### Valid Patterns
+
+<Accordion title="29 Valid Diphthongs (Nguyên âm đôi)">
+
+```
+ai, ao, au, ay, âu, ây, eo, êu,
+ia, iê, iu, oa, oă, oe, oi, ôi, ơi,
+ua, uâ, uê, ui, uô, uy, ưa, ưi, ươ, ưu, yê
+```
+
+</Accordion>
+
+<Accordion title="10 Valid Triphthongs (Nguyên âm ba)">
+
+```
+iêu, yêu, oai, oay, oeo, uây, uôi, ươi, ươu, uyê
+```
+
+</Accordion>
+
+<Accordion title="Invalid Patterns (Blocked)">
+
+```
+ea, ou, yo, eu (without circumflex), ae, yi, wu
+```
+
+<Warning>
+These patterns are **NOT valid** in Vietnamese and are rejected by the engine.
+</Warning>
+
+</Accordion>
+
+## Auto-Capitalization
+
+Gõ Nhanh automatically capitalizes the first letter after:
+
+- Period (`.`)
+- Exclamation mark (`!`)
+- Question mark (`?`)
+- Enter key
+
+```
+chào bạn. bạn khỏe không?
+         ↑ Auto-capitalized
+         
+Result: Chào bạn. Bạn khỏe không?
+```
+
+## FAQ
+
+<AccordionGroup>
+
+<Accordion title="Can I switch between Telex and VNI?">
+Yes! Go to **Settings → General → Input Method** and select your preferred method. The change takes effect immediately.
+</Accordion>
+
+<Accordion title="Why does 'text' become 'têt'?">
+In Telex, `e` + `e` → `ê` and `x` → ngã. Use [Auto-Restore](/features/auto-restore) by pressing Space, or press ESC to restore manually.
+</Accordion>
+
+<Accordion title="Which method is more popular?">
+Telex is more popular among younger users and programmers. VNI is preferred by those who learned it first or need to avoid conflicts with code editing.
+</Accordion>
+
+<Accordion title="Can I customize the key mappings?">
+No, key mappings are fixed to follow standard Telex and VNI conventions. This ensures compatibility with other Vietnamese IMEs.
+</Accordion>
+
+</AccordionGroup>
+
+## Technical Reference
+
+For complete Vietnamese language rules, see:
+
+- [Vietnamese Language System](https://github.com/khaphanspace/gonhanh.org/blob/main/docs/vietnamese-language-system.md) - Complete reference
+- [Validation Algorithm](https://github.com/khaphanspace/gonhanh.org/blob/main/docs/validation-algorithm.md) - Technical details
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Auto-Restore" icon="rotate-left" href="/features/auto-restore">
+    Automatic English word restoration
+  </Card>
+  <Card title="Shortcuts" icon="bolt" href="/features/shortcuts">
+    Text expansion shortcuts
+  </Card>
+</CardGroup>

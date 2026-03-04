@@ -1,0 +1,336 @@
+---
+title: "Tone Placement"
+description: "Vietnamese tone placement rules and orthography"
+---
+
+# Tone Placement
+
+This guide explains how Gõ Nhanh determines where to place tone marks (dấu thanh) and diacritics (dấu phụ) in Vietnamese text.
+
+---
+
+## Overview
+
+Vietnamese is a **tonal language** with 6 tones, represented by diacritical marks placed on vowels:
+
+| Tone | Mark | Example | Name |
+|------|------|---------|------|
+| Level | (none) | ma | Ngang |
+| Falling | \` | mà | Huyền |
+| Rising | ´ | má | Sắc |
+| Tumbling | ̉ | mả | Hỏi |
+| Rising glottalized | ~ | mã | Ngã |
+| Falling glottalized | ̣ | mạ | Nặng |
+
+The challenge: **Where does the tone mark go when there are multiple vowels?**
+
+Gõ Nhanh implements the complete Vietnamese orthography rules to automatically place marks on the correct vowel.
+
+---
+
+## Basic Rules
+
+### Single Vowel
+
+When the syllable has only one vowel, the tone mark goes on that vowel:
+
+```
+bá, bà, bả, bã, bạ
+```
+
+### Multiple Vowels
+
+For syllables with 2-3 vowels, Gõ Nhanh uses the **priority system**:
+
+<Steps>
+  <Step title="Priority 1: Vowels with existing diacritics">
+    If a vowel already has a circumflex (^), horn (ơ, ư), or breve (ă), place the tone mark there.
+
+    Examples:
+    - `sứa` - tone on `ứ` (has horn)
+    - `đời` - tone on `ờ` (has horn)
+    - `luật` - tone on `ậ` (has circumflex)
+  </Step>
+  <Step title="Priority 2: Position in vowel cluster">
+    For vowel pairs without diacritics, use the **main vowel** (âm chính) according to phonetic rules.
+
+    Examples:
+    - `hai` - tone on `a` (first vowel is main)
+    - `hoa` - tone on `a` (second vowel is main after `o` medial)
+    - `nguyễn` - tone on `ễ` (middle vowel of three)
+  </Step>
+</Steps>
+
+---
+
+## Modern vs. Traditional Tone Placement
+
+Vietnamese has two accepted tone placement styles: **Kiểu mới** (Modern) and **Kiểu cũ** (Traditional).
+
+### Kiểu mới (Modern) - Default
+
+Based on phonetics and the **2018 Ministry of Education** guidelines. Places tone marks according to the **main vowel** in IPA phonetic transcription.
+
+**Examples:**
+- `hoà` (not `hòa`) - /wa/ → tone on `a`
+- `khoẻ` (not `khỏe`) - /wɛ/ → tone on `e`
+- `thuỷ` (not `thủy`) - /wi/ → tone on `y`
+
+### Kiểu cũ (Traditional)
+
+Based on visual aesthetics and pre-1950 dictionaries. Places tone marks near the center of the word for balance.
+
+**Examples:**
+- `hòa` (not `hoà`)
+- `khỏe` (not `khoẻ`)
+- `thủy` (not `thuỷ`)
+
+### Changing the Style
+
+In **Settings** → **Quy tắc gõ** → **Đặt dấu kiểu mới**:
+- **Enabled** = Modern style (hoà, khoẻ, thuỷ)
+- **Disabled** = Traditional style (hòa, khỏe, thủy)
+
+<Info>
+Both styles are correct and widely used in Vietnam. Choose based on your preference or organization's style guide.
+</Info>
+
+---
+
+## Tone Mark Matrix
+
+Gõ Nhanh implements **43 vowel patterns** covering all valid Vietnamese combinations.
+
+### Two-Vowel Combinations
+
+<Accordion title="Common Diphthongs (Click to expand)">
+| Pattern | Keys | Tone Position | Examples |
+|---------|------|---------------|----------|
+| ai | A+I | a | hái, mài, sải, dãi, mại |
+| ao | A+O | a | cao, sào, hảo, não, tạo |
+| au | A+U | a | sau, mầu, dẩu, mãu, mậu |
+| âu | A+A+U | â | sâu, lầu, đẩu, trẫu, chậu |
+| ây | A+A+Y | â | đây, tầy, hẩy, mãy, mậy |
+| eo | E+O | e | kẹo, rẻo, méo |
+| êu | E+E+U | ê | kêu, rều, khểu, nghễu, liệu |
+| ia | I+A | i | kía, ghì̀a, bỉa, nghĩa, xía |
+| iê | I+E+E | ê | tiến, miền, kiểu, biễn, điệp |
+| iu | I+U | i | dịu, kìu, tỉu |
+| oa | O+A | a | hoa, toà, hoả, khoã, khoạ |
+| oe | O+E | e | khoẻ, oé, toẹ |
+| oi | O+I | o | tới, nòi, đổi, mõi, cọi |
+| ôi | O+O+I | ô | tôi, hồi, tổi, mỗi, khối |
+| ơi | O+W+I | ơ | bơi, nời, rởi, mỡi, nợi |
+| ua | U+A | u (open) | mua, cùa, sủa, mũa, múa |
+| ua | Q+U+A | a (after q) | qua, quà, quả, quã, quạ |
+| uê | U+E+E | ê | huế, muền, tuể |
+| ui | U+I | u | vui, nùi, thủi, nhũi, múi |
+| uô | U+O+O | ô | thuốc, nguồn, quổng |
+| uy | U+Y | y | quy, duyên, chuyển, hủy, thúy |
+| ưa | U+W+A | ư | mưa, chừa, tửa, mữa, lựa |
+| ươ | U+W+O | ơ | mười, người, lướn, khuỡng, lượm |
+| ưu | U+W+U | ư (first) | lưu, hừu, dửu, mữu, kịu |
+</Accordion>
+
+### Three-Vowel Combinations
+
+<Accordion title="Triphthongs (Click to expand)">
+| Pattern | Keys | Tone Position | Examples |
+|---------|------|---------------|----------|
+| iêu | I+E+E+U | ê | tiêu, miều, diễu, liệu |
+| yêu | Y+E+E+U | ê | yêu, nguyễn |
+| oai | O+A+I | a | ngoài, loại, hoài, khoãi, ngoại |
+| oay | O+A+Y | a | xoáy, khoảy, ngoãy |
+| oeo | O+E+O | e | khoèo, ngoéo, khỏeo |
+| uây | U+A+A+Y | â | khuấy, quầy, quẩy |
+| uôi | U+O+O+I | ô | cuối, tuổi, nguồi, buổi |
+| ươi | U+W+O+I | ơ | mười, tươi, lười, khuỡi, cười |
+| ươu | U+W+O+U | ơ | rượu, hương, nước, cườm |
+| uyê | U+Y+E+E | ê | chuyến, nguyện, tuyển |
+</Accordion>
+
+### Invalid Combinations
+
+These vowel combinations **do not exist** in Vietnamese and will not receive diacritics:
+
+- `ou`, `eu`, `ae`, `yi`, `wu`
+- `ôa`, `âi`, `ôe` (must use plain vowels)
+- `eng`, `êng` (use `-nh` instead: `anh`, `ênh`)
+
+---
+
+## Diacritic Placement (Dấu phụ)
+
+Before placing tone marks, Gõ Nhanh first applies **diacritics** (circumflex, horn, breve).
+
+### Telex Method
+
+| Input | Diacritic | Result |
+|-------|-----------|--------|
+| `aa` | Circumflex | â |
+| `ee` | Circumflex | ê |
+| `oo` | Circumflex | ô |
+| `aw` | Breve | ă |
+| `ow` | Horn | ơ |
+| `uw` | Horn | ư |
+
+### Special Cases
+
+<Tabs>
+  <Tab title="ươ (Both horns)">
+    Input: `uow` or `uwo`
+
+    Both `u` and `o` receive the horn:
+    ```
+    u + o + w → ươ
+    ```
+
+    Examples: `được`, `mười`, `người`
+  </Tab>
+  <Tab title="uơ (Only o gets horn)">
+    Input: `uow` in specific words
+
+    Only `o` receives the horn, `u` stays plain:
+    ```
+    u + o + w → uơ (in "huơ", "khuơ")
+    ```
+
+    This is a special case (Issue #133) for rare words.
+  </Tab>
+  <Tab title="ưu (First u gets horn)">
+    Input: `uuw` or `uwu`
+
+    Only the first `u` receives the horn:
+    ```
+    u + u + w → ưu
+    ```
+
+    Examples: `lưu`, `hưu`, `ngưu`, `cứu`
+  </Tab>
+  <Tab title="ươu (u,o get horn)">
+    Input: `uowu`
+
+    First `u` and `o` get horn, last `u` stays plain:
+    ```
+    u + o + u + w → ươu
+    ```
+
+    Examples: `rượu`, `hươu`, `bướu`
+  </Tab>
+</Tabs>
+
+---
+
+## Final Consonant Rules
+
+The **final consonant** (phụ âm cuối) affects tone placement:
+
+### Open Syllables (No Final Consonant)
+
+Tone mark placement follows the standard vowel priority rules.
+
+### Closed Syllables (With Final Consonant)
+
+When a syllable ends with a consonant, tone placement depends on **whether the final is sonorant**:
+
+**Sonorant finals** (`-m`, `-n`, `-ng`, `-nh`):
+- Follow standard vowel priority
+- All tones allowed
+
+**Obstruent finals** (`-p`, `-t`, `-c`, `-ch`):
+- Only **sắc** (rising) and **nặng** (falling glottalized) tones allowed
+- Examples: `cấp`, `mật`, `các`, `ách` ✓
+- Invalid: `cảp`, `mãt`, `càc`, `ạch` ✗
+
+<Warning>
+This is a **phonotactic constraint** - syllables ending in `-p`, `-t`, `-c`, `-ch` cannot have huyền, hỏi, or ngã tones in Vietnamese.
+</Warning>
+
+---
+
+## Implementation Details
+
+Gõ Nhanh implements tone placement in the core Rust engine:
+
+### Vowel Collection
+
+```rust
+// ~/workspace/source/core/src/engine/transform.rs:174-185
+pub fn apply_mark(buf: &mut Buffer, mark_value: u8, modern: bool) -> TransformResult {
+    let vowels = utils::collect_vowels(buf);
+    if vowels.is_empty() {
+        return TransformResult::none();
+    }
+
+    // Find position using phonology rules
+    let last_vowel_pos = vowels.last().map(|v| v.pos).unwrap_or(0);
+    let has_final = utils::has_final_consonant(buf, last_vowel_pos);
+    let has_qu = utils::has_qu_initial(buf);
+    let has_gi = utils::has_gi_initial(buf);
+    let pos = Phonology::find_tone_position(&vowels, has_final, modern, has_qu, has_gi);
+```
+
+### Context-Aware Placement
+
+The `find_tone_position` function considers:
+
+1. **Number of vowels** (1, 2, or 3)
+2. **Diacritics present** (circumflex, horn, breve)
+3. **Final consonant** (yes/no)
+4. **Tone style** (modern/traditional)
+5. **Special initials** (`qu`, `gi`)
+
+**Reference:** `~/workspace/source/core/src/data/vowel.rs` (Phonology module)
+
+---
+
+## Vietnamese Orthography Resources
+
+For a complete reference of Vietnamese phonology and orthography:
+
+- **Vowel System:** See `~/workspace/source/docs/vietnamese-language-system.md` Section 3
+- **Tone Placement Matrix:** Section 7.6 (43 patterns)
+- **Validation Rules:** `~/workspace/source/docs/validation-algorithm.md`
+
+### Quick Reference
+
+Vietnamese has:
+- **12 base vowels:** a, ă, â, e, ê, i, o, ô, ơ, u, ư, y
+- **29 diphthongs:** ai, ao, au, ây, âu, eo, êu, ia, iê, iu, oa, oă, oe, oi, ôi, ơi, ua, uâ, uê, ui, uô, uy, ưa, ưi, ươ, ưu, yê
+- **14 triphthongs:** iêu, yêu, oai, oay, oeo, uây, uôi, uya, ươi, ươu, uyê, uyu, uêu, oao
+- **6 tones:** ngang, huyền, sắc, hỏi, ngã, nặng
+
+---
+
+## Testing Tone Placement
+
+You can verify tone placement by typing test words:
+
+### Test Cases
+
+| Input (Telex) | Expected Output | Tests |
+|---------------|-----------------|-------|
+| `hoaf` | hoà (modern) or hòa (traditional) | oa+tone placement |
+| `khoẻ` | khoẻ (modern) or khỏe (traditional) | oe+tone placement |
+| `nguyeenx` | nguyễn | Triphthong uyê |
+| `duowcj` | được | ươ with tone |
+| `luuuj` | lưu | ưu with tone |
+| `tieeus` | tiếu | iêu with tone |
+| `quatss` | quất | ua after q + nặng |
+
+### Invalid Combinations
+
+These should **not** transform:
+
+| Input (Telex) | Result | Reason |
+|---------------|--------|--------|
+| `taafoo` | tàoo | V1 has tone → no circumflex on V2 |
+| `tifaa` | tìaa | V1 has tone → no circumflex on V2 |
+| `ce` | ce | Invalid consonant+vowel (use `ke`) |
+
+---
+
+## Related Documentation
+
+- [Settings Guide](/configuration/settings) - Configure tone placement style
+- [Per-App Configuration](/configuration/per-app-config) - App-specific settings

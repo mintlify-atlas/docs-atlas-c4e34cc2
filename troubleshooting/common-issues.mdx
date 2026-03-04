@@ -1,0 +1,404 @@
+---
+title: Common Issues
+description: Solutions to frequently encountered problems when using Gõ Nhanh
+---
+
+## Installation Issues
+
+### App Won't Open on macOS
+
+<Warning>
+If you see "GoNhanh.app is damaged and can't be opened" after downloading manually, this is a security feature, not actual damage.
+</Warning>
+
+**Solution:**
+
+<Steps>
+  <Step title="Remove quarantine attribute">
+    Open Terminal and run:
+    ```bash
+    xattr -cr /Applications/GoNhanh.app
+    ```
+  </Step>
+  <Step title="Launch the app">
+    Double-click GoNhanh.app in Applications folder
+  </Step>
+  <Step title="Grant Accessibility permission">
+    Go to **System Settings → Privacy & Security → Accessibility**
+    
+    Enable GoNhanh in the list
+  </Step>
+</Steps>
+
+<Info>
+**Why does this happen?**
+
+macOS quarantines apps downloaded from the internet. The `xattr` command removes this quarantine flag safely.
+</Info>
+
+### Accessibility Permission Issues
+
+<Accordion title="Gõ Nhanh can't capture keystrokes">
+  The app requires Accessibility permission to intercept keyboard events system-wide.
+
+  **Check permission status:**
+  1. Open **System Settings**
+  2. Go to **Privacy & Security → Accessibility**
+  3. Verify GoNhanh is in the list and **enabled**
+
+  **Reset permission if not working:**
+  ```bash
+  tccutil reset Accessibility org.gonhanh
+  ```
+  
+  Then restart GoNhanh and grant permission again when prompted.
+</Accordion>
+
+<Accordion title="Permission granted but still not working">
+  After granting permission, you must **restart the app**:
+
+  1. Right-click menu bar icon → **Quit**
+  2. Reopen from Applications folder
+  3. Test typing in any app
+</Accordion>
+
+<Accordion title="Permission revoked after macOS update">
+  macOS updates sometimes reset Accessibility permissions.
+
+  **Solution:**
+  1. Go to **System Settings → Privacy & Security → Accessibility**
+  2. Toggle GoNhanh **off then on**
+  3. Restart the app
+</Accordion>
+
+---
+
+## Typing Issues
+
+### Character Swallowing in IDEs
+
+<Warning>
+Claude Code, VS Code, Cursor, Windsurf, and JetBrains IDEs may "swallow" the first character when the AI assistant autocomplete is active.
+</Warning>
+
+**Example:** Type `được` → only see `ược` (missing `đ`)
+
+**Solution:**
+
+<Steps>
+  <Step title="Open Settings">
+    Click menu bar icon → **Settings** → **Advanced** tab
+  </Step>
+  <Step title="Add per-app config">
+    Under "Per-app customization", click **+**
+    
+    Select your IDE from the list
+  </Step>
+  <Step title="Increase delay">
+    Drag the **Delay** slider to **"Very High"** (purple)
+    
+    This adds extra delay between backspaces and character insertion
+  </Step>
+  <Step title="Test">
+    Settings auto-save. Return to your IDE and test typing
+  </Step>
+</Steps>
+
+<Info>
+**Why this works:**
+
+IDEs with AI autocomplete have slower response times. The delay ensures the backspace is processed before inserting the new character.
+
+Each machine and IDE combination may need different delay levels. Experiment to find what works best.
+</Info>
+
+### Dính Chữ (Stuck Characters) in Address Bar
+
+**Problem:** Typing Vietnamese in Chrome/Safari/Arc address bar causes stuck characters
+
+**Example:** Type `dantri` → see `dân trí` but URL doesn't update correctly
+
+<Accordion title="How Gõ Nhanh handles this">
+  Gõ Nhanh automatically detects address bars (AXComboBox elements) and uses selection-based replacement instead of backspace.
+
+  This should work automatically. If you still see issues:
+  1. Check you're running the latest version
+  2. Report the specific browser and version on GitHub
+</Accordion>
+
+### Input Source Not Switching
+
+<Warning>
+When using non-Latin input sources (Japanese, Chinese, Korean, etc.), Gõ Nhanh automatically disables itself.
+</Warning>
+
+**Supported behavior:**
+- Switch to **Japanese** → Menu bar shows あ, Gõ Nhanh disabled
+- Switch back to **English** → Menu bar shows V, Gõ Nhanh re-enabled
+- Switch to **Vietnamese IME** → Menu bar shows E, Gõ Nhanh disabled
+
+**Blocked languages:**
+```swift
+// East Asian
+ja, zh, zh-Hans, zh-Hant, ko
+
+// Southeast Asian (non-Latin)
+th, km, lo, my
+
+// South Asian  
+hi, bn, ta, and others
+
+// Middle Eastern
+ar, he, fa, ur
+
+// Cyrillic
+ru, uk, be, bg
+```
+
+<Info>
+**Why?**
+
+These input methods use different character systems incompatible with Vietnamese. Gõ Nhanh only works with Latin-based keyboards.
+</Info>
+
+### Auto-restore Not Working for English Words
+
+**Problem:** Typing `text` → get `têt` instead of auto-restoring to `text`
+
+<Accordion title="Check you pressed Space">
+  Auto-restore only triggers when you press **Space** after the word.
+  
+  Typing `text` alone won't restore. Type `text ` (with space) to trigger.
+</Accordion>
+
+<Accordion title="Some words can't be auto-restored">
+  Words that form valid Vietnamese syllables cannot be auto-detected:
+
+  | English | Becomes | Why |
+  |---------|---------|-----|
+  | `mix` | `mĩ` | M + ĩ is valid Vietnamese |
+  | `box` | `bõ` | B + õ is valid Vietnamese |
+  | `six` | `sĩ` | S + ĩ is valid Vietnamese |
+
+  **Workaround:** Press **ESC** after typing to restore, or temporarily disable Gõ Nhanh with `Ctrl+Space`.
+</Accordion>
+
+---
+
+## Performance Issues
+
+### High CPU Usage
+
+<Accordion title="Check debug logging is disabled">
+  Debug mode significantly impacts performance.
+
+  **Check if enabled:**
+  ```bash
+  ls -la /tmp/gonhanh_debug.log
+  ```
+
+  **Disable debug mode:**
+  ```bash
+  rm /tmp/gonhanh_debug.log
+  ```
+
+  Then restart GoNhanh.
+</Accordion>
+
+<Accordion title="Normal CPU usage">
+  Expected performance:
+  - **Idle:** 0% CPU, ~5MB RAM
+  - **Typing:** Brief spikes to 1-3% CPU
+  - **Latency:** < 1ms per keystroke
+
+  If you see sustained high CPU usage, please report on GitHub with:
+  - macOS version
+  - GoNhanh version
+  - List of running apps
+</Accordion>
+
+### Typing Lag or Delay
+
+<Warning>
+If you notice delay between pressing keys and seeing output, this is usually not GoNhanh.
+</Warning>
+
+**Check these first:**
+
+1. **Disable other input methods**
+   - Go to **System Settings → Keyboard → Input Sources**
+   - Remove any other Vietnamese IMEs
+   - Keep only: English + GoNhanh
+
+2. **Check Accessibility conflicts**
+   - Other apps with Accessibility permission can interfere
+   - Try temporarily disabling other accessibility tools
+
+3. **Test in different apps**
+   - If lag only in specific app (e.g., Electron apps), increase per-app delay
+   - If lag everywhere, check Activity Monitor for other processes
+
+---
+
+## Settings Issues
+
+### Settings Not Saving
+
+**Check preferences file exists:**
+```bash
+ls -la ~/Library/Preferences/org.gonhanh.*
+```
+
+**If file is corrupted, reset:**
+```bash
+defaults delete org.gonhanh
+```
+
+Then restart GoNhanh. All settings will reset to defaults.
+
+### Shortcuts Not Working
+
+<Accordion title="Gõ tắt (abbreviations) not expanding">
+  **Check shortcut is saved:**
+  1. Open Settings → Shortcuts
+  2. Verify your abbreviation is in the list
+  3. Format: `from` → `to` (e.g., `vn` → `Việt Nam`)
+
+  **Trigger requirements:**
+  - Type the abbreviation exactly
+  - Press **Space** or punctuation
+  - The replacement happens immediately
+</Accordion>
+
+<Accordion title="Ctrl+Space not toggling Vietnamese">
+  **This is the global hotkey to enable/disable Gõ Nhanh.**
+
+  If not working:
+  1. Check another app isn't capturing `Ctrl+Space`
+  2. Try clicking menu bar icon to toggle manually
+  3. Check keyboard is properly connected (Bluetooth keyboards sometimes drop modifiers)
+</Accordion>
+
+---
+
+## App-Specific Issues
+
+### Electron Apps (Slack, Discord, Notion)
+
+**Problem:** Occasional character loss or duplication
+
+**Solution:**
+- Update to latest version of the Electron app
+- Try increasing per-app delay in GoNhanh Settings → Advanced
+- Report persistent issues on GitHub
+
+### JetBrains IDEs (IntelliJ, WebStorm, PyCharm)
+
+**Problem:** Autocomplete popup interferes with typing
+
+**Solution:**
+GoNhanh automatically detects JetBrains apps (bundle ID: `com.jetbrains.*`) and uses selection-based replacement.
+
+If still having issues, increase delay in per-app settings.
+
+### Microsoft Excel
+
+**Problem:** Cell autocomplete causes character issues
+
+**Solution:**
+GoNhanh automatically detects Excel and adjusts behavior. Update to latest version if problems persist.
+
+### Terminal (Terminal.app, iTerm2)
+
+<Info>
+**Best practice:** Disable Gõ Nhanh when working in Terminal.
+
+Press `Ctrl+Space` to toggle off before typing commands.
+</Info>
+
+Why: Shell commands are English-only. Vietnamese input interferes with:
+- Command names
+- File paths
+- Keyboard shortcuts (`Ctrl+C`, `Ctrl+D`, etc.)
+
+**Alternative:** Add Terminal to exclusion list:
+1. Settings → Advanced → Per-app customization
+2. Add Terminal.app
+3. Set to "Always disable"
+
+---
+
+## Update Issues
+
+### Auto-update Check Fails
+
+**Gõ Nhanh checks for updates every 24 hours.**
+
+If update check fails:
+1. Check internet connection
+2. Manually check: Menu bar → Settings → Updates
+3. Or install manually from GitHub releases
+
+### Update Downloaded but Won't Install
+
+**For Homebrew installations:**
+```bash
+brew upgrade --cask gonhanh
+```
+
+**For manual installations:**
+1. Download latest GoNhanh.dmg from GitHub
+2. Quit current GoNhanh (menu bar → Quit)
+3. Open DMG and drag to Applications (replace existing)
+4. Run `xattr -cr /Applications/GoNhanh.app`
+5. Relaunch
+
+---
+
+## Debug Mode
+
+<Info>
+Enable debug logging to diagnose issues.
+</Info>
+
+**Enable:**
+```bash
+touch /tmp/gonhanh_debug.log
+```
+
+**View logs:**
+```bash
+tail -f /tmp/gonhanh_debug.log
+```
+
+**Log format:**
+```
+[HH:MM:SS.mmm] K:42 → Action:Send, BS:1, Out:[á]
+[HH:MM:SS.mmm] M: setMethod(Telex)
+[HH:MM:SS.mmm] P: RAM=5.2MB keys=1234
+```
+
+**Disable:**
+```bash
+rm /tmp/gonhanh_debug.log
+```
+
+<Warning>
+Debug mode impacts performance. Only enable when troubleshooting.
+</Warning>
+
+---
+
+## Getting Help
+
+If these solutions don't help:
+
+1. **Check GitHub Issues**: [github.com/khaphanspace/gonhanh.org/issues](https://github.com/khaphanspace/gonhanh.org/issues)
+2. **Report a bug**: Include macOS version, GoNhanh version, and steps to reproduce
+3. **Community support**: Join discussions on GitHub
+
+**Include in bug reports:**
+- macOS version (`sw_vers`)
+- GoNhanh version (menu bar → About)
+- App where issue occurs (bundle ID helpful)
+- Debug log excerpt if available

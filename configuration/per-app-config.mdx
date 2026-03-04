@@ -1,0 +1,352 @@
+---
+title: "Per-App Configuration"
+description: "Configure delay and injection methods for specific applications"
+---
+
+# Per-App Configuration
+
+Gõ Nhanh allows you to customize **delay** and **injection method** settings for individual applications. This is useful when an app has slow UI responsiveness or non-standard text input behavior.
+
+<Note>
+This feature is separate from **Per-App Mode**, which only remembers the Vietnamese input on/off state. Per-app profiles control *how* Gõ Nhanh injects text.
+</Note>
+
+---
+
+## Accessing Per-App Profiles
+
+1. Open **Settings** → **Nâng cao** (Advanced)
+   - If you don't see the Advanced tab, enable it in **Settings** → **Hiển thị cài đặt nâng cao**
+2. Find the section **Tuỳ chỉnh theo ứng dụng**
+3. Click **+** to add an application
+
+---
+
+## When You Need Per-App Profiles
+
+You may need custom settings if you experience:
+
+<Warning>
+**"Nuốt chữ" (Character Loss)** - Some characters disappear when typing Vietnamese.
+
+**Example:** Type `được` but only see `đưc`
+
+**Solution:** Increase the **Delay** setting.
+</Warning>
+
+<Warning>
+**Diacritics appear in wrong position** - Tone marks or diacritics show up on the wrong character.
+
+**Solution:** Try a different **Kiểu Inject** (injection method).
+</Warning>
+
+<Warning>
+**Slow performance** - Typing feels laggy or the app freezes briefly.
+
+**Solution:** Adjust the injection method or decrease delay.
+</Warning>
+
+---
+
+## Common Use Case: Claude Code in IDEs
+
+Claude Code, Cursor, Windsurf, and similar AI-powered editors have slower text field responsiveness, causing character loss.
+
+### Quick Fix for Claude Code
+
+<Steps>
+  <Step title="Open Advanced Settings">
+    Settings → **Nâng cao** tab
+  </Step>
+  <Step title="Add Your IDE">
+    Click **+** → Select your IDE (VS Code, Cursor, Windsurf, etc.)
+  </Step>
+  <Step title="Increase Delay">
+    Drag **Delay** slider to the right → **"Rất cao"** (purple)
+  </Step>
+  <Step title="Test">
+    Switch to your IDE and try typing Vietnamese
+  </Step>
+</Steps>
+
+<Accordion title="Why does this happen?">
+AI-powered editors like Claude Code run additional processing on every keystroke (syntax analysis, AI suggestions, etc.), which delays the text field's response time.
+
+When Gõ Nhanh sends backspace and replacement characters too quickly, the editor hasn't finished processing the previous keystroke, resulting in character loss.
+
+Increasing the delay gives the editor time to process each keystroke before the next one arrives.
+</Accordion>
+
+---
+
+## Delay Settings
+
+Delay controls the microsecond (µs) wait times between keystrokes during Vietnamese character transformation.
+
+### Delay Presets
+
+| Preset | Color | Backspace µs | Wait µs | Text µs | Use Case |
+|--------|-------|--------------|---------|---------|----------|
+| **Không** | Blue | 200 | 800 | 500 | Fast native apps (Safari, Notes) |
+| **Thấp** | Green | 1,000 | 3,000 | 1,500 | Most modern apps |
+| **Vừa** | Orange | 3,000 | 8,000 | 3,000 | Electron apps, slow browsers |
+| **Cao** | Red | 8,000 | 25,000 | 8,000 | Very slow apps |
+| **Rất cao** | Purple | 12,000 | 25,000 | 12,000 | Claude Code, Cursor, Windsurf |
+
+<Info>
+The system automatically detects the optimal delay for most apps. You only need to adjust this if you experience character loss.
+</Info>
+
+### How Delay Works
+
+When you type Vietnamese characters, Gõ Nhanh:
+
+1. **Backspace delay** - Waits before sending backspace to delete the raw character
+2. **Wait delay** - Waits before sending the replacement Vietnamese character
+3. **Text delay** - Waits before sending additional characters
+
+**Example:** Typing `a` then `s` to produce `á`
+
+```
+1. Type 'a' → appears in text field
+2. Type 's' → Gõ Nhanh detects tone marker
+3. [Wait backspace_delay]
+4. Send backspace → removes 'a'
+5. [Wait wait_delay]
+6. Send 'á' → appears in text field
+7. [Wait text_delay]
+8. Ready for next character
+```
+
+---
+
+## Injection Methods
+
+**Kiểu Inject** (Injection Method) controls *how* Gõ Nhanh sends Vietnamese characters to the application.
+
+### Available Methods
+
+<Tabs>
+  <Tab title="Tự động (Auto)">
+    Let Gõ Nhanh automatically detect the best injection method for the app.
+
+    **How it works:**
+    - Gõ Nhanh maintains a database of known apps and their optimal methods
+    - First-time apps use a safe default
+
+    **Recommended:** Yes (for most users)
+  </Tab>
+  <Tab title="Fast">
+    Default backspace + text injection with low delay.
+
+    **Best for:**
+    - Native macOS apps (TextEdit, Notes, Mail)
+    - Fast-responding text fields
+
+    **Implementation:**
+    ```
+    Send: Backspace × N → Type replacement
+    ```
+  </Tab>
+  <Tab title="Slow">
+    Higher delay variant of Fast method.
+
+    **Best for:**
+    - Electron apps (VS Code, Slack, Discord)
+    - Web apps with heavy JavaScript
+
+    **Implementation:**
+    ```
+    Send: Backspace × N (with delay) → Type replacement (with delay)
+    ```
+  </Tab>
+  <Tab title="Char-by-char">
+    Types each character individually instead of as a string.
+
+    **Best for:**
+    - Safari address bar
+    - Google Docs
+    - Some web forms
+
+    **Implementation:**
+    ```
+    For each character in replacement:
+        Send: character
+        Wait: text_delay
+    ```
+  </Tab>
+  <Tab title="Selection">
+    Selects the old text and replaces it.
+
+    **Best for:**
+    - Combo boxes
+    - Autocomplete fields
+    - Some IDE text fields
+
+    **Implementation:**
+    ```
+    Send: Shift+Left × N (select old text)
+    Send: Type replacement (overwrites selection)
+    ```
+  </Tab>
+  <Tab title="Empty char">
+    Prefixes an empty character to break browser autocomplete.
+
+    **Best for:**
+    - Chrome address bar
+    - Firefox search bar
+    - Browser form fields with autocomplete
+
+    **Implementation:**
+    ```
+    Send: U+200B (zero-width space)
+    Send: Backspace × (N+1)
+    Send: Type replacement
+    ```
+  </Tab>
+</Tabs>
+
+<Accordion title="How does Gõ Nhanh detect the best method?">
+Gõ Nhanh uses bundle identifiers to match apps against a built-in database:
+
+```swift
+func getDetectedDefault(for bundleId: String) -> (method: String, delays: (UInt32, UInt32, UInt32))? {
+    // Examples from the database:
+    // "com.google.Chrome" → ("emptyCharPrefix", (200, 800, 500))
+    // "com.microsoft.VSCode" → ("slow", (3000, 8000, 3000))
+    // "com.apple.Safari" → ("charByChar", (200, 800, 500))
+}
+```
+
+When you add an app to per-app profiles, Gõ Nhanh pre-fills the optimal settings if the app is in the database.
+</Accordion>
+
+---
+
+## Profile Settings
+
+Each per-app profile has three configurable options:
+
+### Bật Gõ Nhanh (Vietnamese Input State)
+
+Force Vietnamese input on/off for this app, overriding the global setting.
+
+- **Tự động** - Use global Vietnamese input state (respects per-app mode)
+- **Bật** - Always enable Vietnamese when switching to this app
+- **Tắt** - Always disable Vietnamese when switching to this app
+
+<Info>
+This is useful for apps where you *never* want Vietnamese (like Terminal) or *always* want Vietnamese (like Slack).
+</Info>
+
+### Delay
+
+See [Delay Settings](#delay-settings) above.
+
+### Kiểu Inject (Injection Method)
+
+See [Injection Methods](#injection-methods) above.
+
+---
+
+## Managing Profiles
+
+### Adding an App
+
+1. Click **+** in the **Tuỳ chỉnh theo ứng dụng** section
+2. Select the application from the file picker
+3. Gõ Nhanh auto-fills optimal settings if the app is recognized
+4. Adjust settings if needed
+
+### Editing a Profile
+
+Profiles are listed by app name and bundle ID. Each profile shows:
+
+- **App icon** and name
+- **Badge** showing detected default method (e.g., "fast", "slow")
+- **Delay slider**
+- **Bật Gõ Nhanh** dropdown
+- **Kiểu Inject** dropdown
+
+Changes save automatically.
+
+### Resetting a Profile
+
+Click the **↻** (reset) icon to restore default settings for the app.
+
+### Removing a Profile
+
+Click the **×** (remove) icon to delete the profile.
+
+---
+
+## Data Model
+
+Per-app profiles are stored in `UserDefaults` as JSON:
+
+```swift
+struct PerAppConfig: Codable, Equatable {
+    var enabledState: Int = 0       // 0=auto, 1=on, -1=off
+    var delayPreset: Int = 0        // 0-4 (none to very high)
+    var injectionOverride: Int = -1 // -1=auto, 0=fast, 1=slow, ...
+}
+
+// Storage:
+UserDefaults.standard.dictionary(forKey: "perAppProfiles")
+// Format: [bundleId: String: PerAppConfig]
+```
+
+**Example stored profile:**
+```json
+{
+  "com.microsoft.VSCode": {
+    "enabledState": 0,
+    "delayPreset": 4,
+    "injectionOverride": -1
+  }
+}
+```
+
+---
+
+## Troubleshooting
+
+### Still experiencing character loss?
+
+1. **Increase delay one level at a time** - Start with "Vừa", then "Cao", then "Rất cao"
+2. **Try a different injection method** - Switch to "Char-by-char" or "Selection"
+3. **Check for app updates** - Some apps improve text field performance in updates
+4. **Disable app extensions** - Browser extensions can interfere with text input
+
+### Typing feels slow?
+
+1. **Decrease delay** - Try "Thấp" or "Không"
+2. **Use "Fast" injection method** - If the app supports it
+
+### Diacritics appear on wrong characters?
+
+1. **Try "Selection" method** - This forces replacement of the entire syllable
+2. **Try "Char-by-char" method** - This sends one character at a time
+
+### Profile not applying?
+
+1. **Check bundle ID** - Make sure the bundle ID matches the running app
+2. **Restart the app** - Profile changes apply on next app switch
+3. **Check Advanced Mode** - Profiles only work when Advanced Mode is enabled
+
+---
+
+## Code Reference
+
+Per-app profile implementation is in:
+
+- **Model:** `~/workspace/source/platforms/macos/PerAppConfigModels.swift:5-119`
+- **UI:** `~/workspace/source/platforms/macos/AdvancedSettingsView.swift:63-249`
+- **State Management:** `~/workspace/source/platforms/macos/MainSettingsView.swift:189-196`
+
+---
+
+## Related Documentation
+
+- [Settings Guide](/configuration/settings) - All configuration options
+- [Tone Placement](/configuration/tone-placement) - Vietnamese orthography rules

@@ -1,0 +1,324 @@
+---
+title: "Smart Switching"
+description: "Per-app mode switching and automatic input source following"
+---
+
+## Overview
+
+Gõ Nhanh provides two intelligent switching features:
+
+1. **Per-App Mode**: Remembers ON/OFF state for each application
+2. **Input Source Following**: Auto-disables when switching to non-Latin input sources
+
+## Per-App Mode Switching
+
+### How It Works
+
+Gõ Nhanh remembers your Vietnamese mode preference (ON/OFF) **separately for each application**.
+
+```
+┌─────────────────────────────────────────┐
+│ You're coding in VS Code (OFF)          │
+│ Switch to Slack to chat (ON)            │
+│ Back to VS Code → Automatically OFF ✓   │
+└─────────────────────────────────────────┘
+```
+
+<Note>
+No manual toggling needed! Just set it once per app, and Gõ Nhanh remembers.
+</Note>
+
+### Example Workflow
+
+<Steps>
+  <Step title="Code in VS Code">
+    Vietnamese mode: **OFF**
+    
+    ```javascript
+    const user = { name: "John" }; // No accents
+    ```
+  </Step>
+  
+  <Step title="Switch to Slack">
+    Vietnamese mode: **ON** (switches automatically)
+    
+    ```
+    Chào anh, code xong chưa? // Vietnamese typing works
+    ```
+  </Step>
+  
+  <Step title="Back to VS Code">
+    Vietnamese mode: **OFF** (switches back automatically)
+    
+    ```javascript
+    function process() { ... } // Still no accents
+    ```
+  </Step>
+</Steps>
+
+### Implementation Details
+
+The per-app mode is implemented in `InputSourceManager.swift` and `PerAppConfigModels.swift`:
+
+<CodeGroup>
+
+```swift platforms/macos/PerAppConfigModels.swift
+struct PerAppConfig: Codable, Equatable {
+    var enabledState: Int = 0  // 0=auto, 1=on, -1=off
+    var delayPreset: Int = 0
+    var injectionOverride: Int = -1
+}
+```
+
+```swift platforms/macos/InputSourceObserver.swift
+func handleChange() {
+    // Get current input source
+    guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+          let idPtr = TISGetInputSourceProperty(source, kTISPropertyInputSourceID)
+    else {
+        return
+    }
+    
+    // Restore user preference from AppState (supports per-app mode)
+    if isAllowedInputSource {
+        RustBridge.setEnabled(AppState.shared.isEnabled)
+    } else {
+        // Force disable for non-Latin input sources
+        RustBridge.setEnabled(false)
+    }
+}
+```
+
+</CodeGroup>
+
+## Automatic Input Source Following
+
+### What It Does
+
+Gõ Nhanh **automatically disables** when you switch to non-Latin input sources and **re-enables** when you switch back to English/Latin.
+
+### Supported Input Sources
+
+<Tabs>
+  <Tab title="Auto-Disable">
+    Gõ Nhanh disables when switching to:
+    
+    - **East Asian**: Japanese (あ), Chinese (中), Korean (한)
+    - **Southeast Asian**: Thai (ก), Khmer (ក), Lao (ກ), Myanmar (က)
+    - **South Asian**: Hindi (अ), Bengali (অ), Tamil (அ)
+    - **Middle Eastern**: Arabic (ع), Hebrew (א), Persian (ف)
+    - **Other**: Russian (Р), Greek (Ω), Vietnamese IME (E)
+  </Tab>
+  
+  <Tab title="Auto-Enable">
+    Gõ Nhanh re-enables when switching back to:
+    
+    - **English**: ABC, U.S., British
+    - **Latin-based**: French, German, Spanish, Portuguese, etc.
+  </Tab>
+</Tabs>
+
+### Language Detection
+
+The system checks the input source's primary language code:
+
+```swift platforms/macos/InputSourceManager.swift
+private let nonLatinLanguages: Set<String> = [
+    // East Asian
+    "ja", "zh", "zh-Hans", "zh-Hant", "ko",
+    // Southeast Asian (non-Latin scripts)
+    "th", "km", "lo", "my",
+    // South Asian
+    "hi", "mr", "ne", "sa", "bn", "ta", "te", "kn", "ml",
+    // Middle Eastern
+    "ar", "he", "fa", "ur",
+    // Other non-Latin
+    "ru", "uk", "be", "bg", "mk", "sr", "el",
+    // Vietnamese IME
+    "vi",
+]
+
+func isInputSourceAllowed(source: TISInputSource) -> Bool {
+    guard let langs = TISGetInputSourceProperty(source, kTISPropertyInputSourceLanguages),
+          let lang = (langs as? [String])?.first
+    else {
+        return true  // No language info → assume Latin
+    }
+    
+    return !nonLatinLanguages.contains(lang)
+}
+```
+
+### Menu Bar Icon
+
+The menu bar icon **changes** to show the current input source:
+
+| Input Source       | Icon | Description            |
+|-------------------|------|------------------------|
+| English (default) | V    | Vietnamese mode ready  |
+| Japanese          | あ   | Japanese input active  |
+| Chinese           | 中   | Chinese input active   |
+| Korean            | 한   | Korean input active    |
+| Thai              | ก    | Thai input active      |
+| Arabic            | ع    | Arabic input active    |
+
+<Info>
+The icon updates in real-time when you switch input sources.
+</Info>
+
+## Per-App Configuration
+
+### Access Settings
+
+1. Click **Gõ Nhanh** icon in menu bar
+2. Select **Settings → Advanced**
+3. Go to **"Per-app configuration"** section
+
+### Available Options
+
+<Accordion title="Enabled State">
+
+- **Auto** (0): Follow global setting
+- **On** (1): Always enable for this app
+- **Off** (-1): Always disable for this app
+
+```swift
+var enabledState: Int = 0  // 0=auto, 1=on, -1=off
+```
+
+</Accordion>
+
+<Accordion title="Delay Preset">
+
+Adjust typing delay for apps with slow input handling (e.g., Electron apps):
+
+```swift
+enum DelayPreset: Int {
+    case none = 0       // 200µs backspace, 800µs wait
+    case low = 1        // 1000µs backspace, 3000µs wait
+    case medium = 2     // 3000µs backspace, 8000µs wait
+    case high = 3       // 8000µs backspace, 25000µs wait
+    case veryHigh = 4   // 12000µs backspace, 25000µs wait
+}
+```
+
+<Warning>
+Increase delay if you see "character eating" (dính chữ) in Claude Code, VS Code, Cursor, or Windsurf.
+</Warning>
+
+</Accordion>
+
+<Accordion title="Injection Override">
+
+Force a specific text injection method:
+
+```swift
+enum InjectionOverride: Int {
+    case auto = -1              // System decides
+    case fast = 0               // Backspace + text
+    case slow = 1               // Higher delay for Electron
+    case charByChar = 2         // Safari/Google Docs
+    case selection = 3          // Select + replace (combo boxes)
+    case emptyCharPrefix = 4    // Break browser autocomplete
+}
+```
+
+Most users should keep this on **Auto**.
+
+</Accordion>
+
+## Use Cases
+
+### For Developers
+
+```
+VS Code (OFF)        → Type code without accents
+Terminal (OFF)       → Run shell commands
+Notion (ON)          → Write documentation in Vietnamese
+Slack (ON)           → Chat with team
+```
+
+### For Multilingual Users
+
+```
+English keyboard     → Gõ Nhanh ON
+Japanese keyboard    → Gõ Nhanh AUTO-DISABLED
+Back to English      → Gõ Nhanh AUTO-ENABLED
+```
+
+### For Content Creators
+
+```
+Google Docs (ON)     → Write articles
+Figma (OFF)          → Design UI
+Notion (ON)          → Take notes
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Mode doesn't switch automatically">
+1. Check **Settings → Advanced → Per-app configuration**
+2. Make sure `enabledState` is set to **Auto** (not forced ON/OFF)
+3. Try toggling the mode manually once for that app
+</Accordion>
+
+<Accordion title="Input source following doesn't work">
+1. Ensure you're using macOS **Input Sources** (not third-party IMEs)
+2. Check System Settings → Keyboard → Input Sources
+3. Restart Gõ Nhanh
+</Accordion>
+
+<Accordion title="Characters eating in IDE">
+Increase delay preset:
+1. Settings → Advanced → Per-app config
+2. Click **+** → Select your IDE
+3. Set **Delay** to "Rất cao" (Very High)
+</Accordion>
+
+</AccordionGroup>
+
+## Technical Architecture
+
+### Observer Pattern
+
+Gõ Nhanh uses `CFNotificationCenter` to observe input source changes:
+
+```swift
+CFNotificationCenterAddObserver(
+    CFNotificationCenterGetDistributedCenter(),
+    Unmanaged.passUnretained(self).toOpaque(),
+    inputSourceCallback,
+    kTISNotifySelectedKeyboardInputSourceChanged,
+    nil,
+    .deliverImmediately
+)
+```
+
+### State Management
+
+Per-app state is stored in `UserDefaults` and synchronized with the Rust engine:
+
+```
+┌─────────────────┐
+│  macOS Layer    │
+│  AppState       │──┐
+└─────────────────┘  │
+                     │ FFI
+┌─────────────────┐  │
+│  Rust Engine    │◀─┘
+│  enabled: bool  │
+└─────────────────┘
+```
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Auto-Restore" icon="rotate-left" href="/features/auto-restore">
+    Automatic English word restoration
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/configuration/settings">
+    Customize all settings
+  </Card>
+</CardGroup>

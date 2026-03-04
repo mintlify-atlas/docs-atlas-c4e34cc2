@@ -1,0 +1,416 @@
+---
+title: Contributing Guidelines
+description: How to contribute to Gõ Nhanh - from small fixes to major features
+---
+
+Thank you for your interest in contributing to Gõ Nhanh! This guide will help you get started.
+
+## Getting Started
+
+Before diving in, familiarize yourself with the project:
+
+<Steps>
+  <Step title="Fork and clone">
+    1. Fork the repository on GitHub
+    2. Clone your fork:
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/gonhanh.org
+    cd gonhanh.org
+    ```
+  </Step>
+
+  <Step title="Set up development environment">
+    Run the setup script:
+    ```bash
+    make setup
+    ```
+    
+    See the [Getting Started](/development/getting-started) guide for detailed setup instructions.
+  </Step>
+
+  <Step title="Create a feature branch">
+    ```bash
+    git checkout -b feature/my-feature
+    ```
+    
+    Use descriptive branch names:
+    - `feat/add-tone-shortcut`
+    - `fix/chrome-autocomplete`
+    - `docs/update-architecture`
+  </Step>
+
+  <Step title="Make your changes">
+    Edit the code, add tests, and ensure everything works.
+  </Step>
+</Steps>
+
+## Development Workflow
+
+### For Rust Core Changes
+
+When modifying the input method engine:
+
+```bash
+cd core
+
+# Make your changes to src/
+vim src/engine/mod.rs
+
+# Run tests frequently
+cargo test
+
+# Check formatting
+cargo fmt --check
+
+# Run linter
+cargo clippy -- -D warnings
+
+# Build for verification
+cargo build --release
+```
+
+<Note>
+  All Rust changes must pass `cargo clippy` with zero warnings.
+</Note>
+
+### For macOS UI Changes
+
+When working on the Swift interface:
+
+<Steps>
+  <Step title="Open in Xcode">
+    ```bash
+    open platforms/macos/GoNhanh.xcodeproj
+    ```
+  </Step>
+
+  <Step title="Make changes">
+    Edit Swift files in Xcode or your preferred editor.
+  </Step>
+
+  <Step title="Test changes">
+    Build and run in Xcode to verify your changes work.
+  </Step>
+
+  <Step title="Format code">
+    ```bash
+    make format
+    ```
+    
+    This runs `swiftformat` on all Swift files.
+  </Step>
+</Steps>
+
+## Testing Requirements
+
+All contributions must include appropriate tests.
+
+### Writing Tests
+
+Gõ Nhanh has 160+ integration tests organized by category:
+
+| Category | File | Purpose |
+|----------|------|----------|
+| **Basic** | `basic_test.rs` | Single keystroke tests |
+| **Words** | `word_test.rs` | Full Vietnamese words |
+| **Sentences** | `sentence_test.rs` | Multi-word sequences |
+| **Behavior** | `behavior_test.rs` | User interactions |
+| **Issues** | `common_issues_test.rs` | Real bug reproductions |
+| **Edge Cases** | `edge_cases_test.rs` | Boundary conditions |
+
+### Test Example
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[test]
+    fn test_telex_basic_tone() {
+        let result = type_text("as", Method::Telex);
+        assert_eq!(result, "á");
+    }
+
+    #[rstest]
+    #[case("a1", "á")]  // VNI sắc
+    #[case("a2", "à")]  // VNI huyền
+    #[case("a3", "ả")]  // VNI hỏi
+    fn test_vni_tones(#[case] input: &str, #[case] expected: &str) {
+        let result = type_text(input, Method::Vni);
+        assert_eq!(result, expected);
+    }
+}
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run with verbose output
+cd core && cargo test -- --nocapture
+
+# Run specific test file
+cargo test --test word_test
+
+# Run specific test
+cargo test test_telex_basic_tone
+
+# Run heavy tests (22k words)
+make test-22k
+```
+
+<Warning>
+  All tests must pass before submitting a pull request.
+</Warning>
+
+## Code Quality
+
+Before committing, ensure your code meets our standards:
+
+<Steps>
+  <Step title="Format your code">
+    ```bash
+    make format
+    ```
+    
+    This runs:
+    - `cargo fmt` for Rust
+    - `swiftformat` for Swift
+  </Step>
+
+  <Step title="Run linters">
+    ```bash
+    make lint
+    ```
+    
+    This checks:
+    - `cargo clippy -- -D warnings` (zero warnings policy)
+    - `swiftformat --lint`
+  </Step>
+
+  <Step title="Run tests">
+    ```bash
+    make test
+    ```
+    
+    Verify all tests pass.
+  </Step>
+</Steps>
+
+## Commit Message Format
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+
+| Type | Purpose | Example |
+|------|---------|----------|
+| `feat` | New feature | `feat(engine): add shortcut expansion` |
+| `fix` | Bug fix | `fix(transform): correct ư placement` |
+| `docs` | Documentation | `docs(api): clarify FFI ownership` |
+| `test` | Tests | `test(validation): add edge cases` |
+| `refactor` | Code reorganization | `refactor(buffer): optimize lookup` |
+| `style` | Formatting | `style(rust): apply cargo fmt` |
+| `chore` | Build/CI | `chore(ci): update workflow` |
+
+### Examples
+
+Good commit messages:
+
+```bash
+feat(engine): add user shortcut table support
+
+Implement ShortcutTable struct to store user-defined abbreviations.
+Allows users to define transforms like "vn" → "Việt Nam".
+
+Closes #45
+```
+
+```bash
+fix(transform): handle ư vowel in compound patterns
+
+The ư vowel was not correctly recognized in sequences like "ưu" and
+"ươ" due to missing pattern validation. Add explicit check for horn
+modifier on u vowel.
+
+Fixes #78
+```
+
+### Subject Line Guidelines
+
+- Use imperative mood: "add" not "adds" or "added"
+- Lowercase first letter
+- No period at the end
+- Maximum 50 characters
+- Complete this sentence: "If applied, this commit will..."
+
+## Pull Request Process
+
+### Before Submitting
+
+<Checklist>
+  - [ ] Code is formatted (`make format`)
+  - [ ] Linters pass (`make lint`)
+  - [ ] All tests pass (`make test`)
+  - [ ] New features have tests
+  - [ ] Documentation is updated
+  - [ ] Commit messages follow convention
+</Checklist>
+
+### PR Template
+
+Use this template for your pull request:
+
+```markdown
+## Description
+
+Brief description of what this PR does and why.
+
+## Type of Change
+
+- [ ] Bug fix (non-breaking change fixing an issue)
+- [ ] New feature (non-breaking change adding functionality)
+- [ ] Breaking change (fix or feature causing existing functionality to break)
+- [ ] Documentation update
+
+## Testing
+
+Describe how you tested this:
+- What test cases did you add?
+- What manual testing did you perform?
+- What edge cases did you consider?
+
+## Related Issues
+
+Closes #123
+Related to #456
+
+## Checklist
+
+- [ ] Tests pass locally
+- [ ] Code is formatted and linted
+- [ ] Documentation updated (if applicable)
+- [ ] No breaking changes (or clearly documented)
+```
+
+### Review Process
+
+<Steps>
+  <Step title="Submit PR">
+    Push your branch and create a pull request on GitHub.
+  </Step>
+
+  <Step title="CI checks">
+    Wait for automated checks to complete:
+    - Code formatting
+    - Linting
+    - Test suite
+    - Build verification
+  </Step>
+
+  <Step title="Code review">
+    A maintainer will review your code and may request changes.
+  </Step>
+
+  <Step title="Approval and merge">
+    Once approved, a maintainer will merge your PR.
+  </Step>
+</Steps>
+
+## Code Review Guidelines
+
+When reviewing or receiving reviews:
+
+### For Reviewers
+
+- Be respectful and constructive
+- Focus on the code, not the person
+- Suggest improvements rather than demanding changes
+- Explain the reasoning behind your comments
+- Approve when ready, even if you have minor suggestions
+
+### For Authors
+
+- Don't take feedback personally
+- Ask for clarification if needed
+- Be open to suggestions
+- Respond to all comments
+- Make requested changes or explain why you disagree
+
+## Types of Contributions
+
+There are many ways to contribute:
+
+### Code Contributions
+
+- **Bug fixes**: Fix reported issues
+- **New features**: Add requested functionality
+- **Performance**: Optimize slow code paths
+- **Refactoring**: Improve code quality
+
+### Non-Code Contributions
+
+- **Documentation**: Improve guides and API docs
+- **Testing**: Add test cases for edge cases
+- **Bug reports**: Report issues with reproduction steps
+- **Feature requests**: Suggest improvements
+- **Community support**: Help other users
+
+## Coding Standards
+
+Follow our detailed [Code Standards](/development/code-standards) guide:
+
+### Rust Standards
+
+- Format with `cargo fmt` (enforced)
+- Zero clippy warnings
+- Add rustdoc comments for public APIs
+- Use snake_case for functions/variables
+- Use CamelCase for types
+
+### Swift Standards
+
+- Follow [Google Swift Style Guide](https://google.github.io/swift-style-guide/)
+- Use camelCase for variables/functions
+- Use PascalCase for types/enums
+- Add comments for complex logic
+
+### FFI Conventions
+
+- Use `#[repr(C)]` for all shared structs
+- Fixed-size types only (u8, u16, u32)
+- Match byte layout exactly between Rust and Swift
+- Document memory ownership clearly
+
+## Need Help?
+
+If you have questions:
+
+1. Check the [documentation](/introduction)
+2. Search existing [GitHub issues](https://github.com/khaphanspace/gonhanh.org/issues)
+3. Open a new issue or discussion
+
+<Note>
+  Don't hesitate to ask questions! We're here to help.
+</Note>
+
+## Recognition
+
+All contributors are recognized in:
+
+- [CONTRIBUTORS.md](https://github.com/khaphanspace/gonhanh.org/blob/main/CONTRIBUTORS.md)
+- README.md contributor section
+- GitHub contributors page
+
+Thank you for making Gõ Nhanh better!

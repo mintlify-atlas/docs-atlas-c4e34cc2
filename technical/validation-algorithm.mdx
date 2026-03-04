@@ -1,0 +1,529 @@
+---
+title: Vietnamese Syllable Validation Algorithm
+description: Comprehensive validation rules for Vietnamese syllable structure and phonotactics
+---
+
+## Overview
+
+The validation algorithm ensures that only valid Vietnamese syllables are transformed by the IME engine. It uses a **whitelist-based approach** with 6 sequential rules to validate syllable structure, phonotactics, and spelling conventions.
+
+## Purpose
+
+```
+Validation occurs BEFORE transformation:
+
+"duoc" + j → VALID   → transform → "được" ✓
+"claus" + s → INVALID → keep original → "clauss" ✓
+"http" + s → INVALID → keep original → "https" ✓
+```
+
+**Protects:**
+- Code identifiers (`function`, `const`)
+- Foreign names (`John`, `Claude`)
+- Loanwords (`pizza`, `email`)
+- URLs and email addresses
+
+## Syllable Structure
+
+### Formula
+
+```
+Syllable = (C₁)(G)V(C₂)
+
+C₁ = Initial consonant (phụ âm đầu)  - optional
+G  = Glide (âm đệm: o, u)            - optional
+V  = Vowel nucleus (nguyên âm)       - REQUIRED
+C₂ = Final consonant (âm cuối)       - optional
+```
+
+### Examples
+
+| Input | C₁ | G | V | C₂ | Valid |
+|-------|-----|-----|------|------|-------|
+| `a` | - | - | a | - | ✓ |
+| `ban` | b | - | a | n | ✓ |
+| `hoa` | h | o | a | - | ✓ |
+| `qua` | qu | - | a | - | ✓ |
+| `giau` | gi | - | au | - | ✓ |
+| `nghieng` | ngh | - | ie | ng | ✓ |
+| `duoc` | d | - | uo | c | ✓ |
+
+## Data Constants
+
+### Initial Consonants (C₁)
+
+<Tabs>
+  <Tab title="Single (16)">
+    ```rust core/src/data/constants.rs
+    VALID_INITIALS_1: [b, c, d, g, h, k, l, m, n, p, q, r, s, t, v, x]
+    ```
+  </Tab>
+
+  <Tab title="Double (11)">
+    ```rust
+    VALID_INITIALS_2: [
+      [c,h], [g,h], [g,i], [k,h], [k,r],
+      [n,g], [n,h], [p,h], [q,u], [t,h], [t,r]
+    ]
+    ```
+    
+    <Note>
+      **kr** is included for ethnic minority place names (Krông Búk, Krông Ana)
+    </Note>
+  </Tab>
+
+  <Tab title="Triple (1)">
+    ```rust
+    VALID_INITIALS_3: [ngh]
+    ```
+  </Tab>
+</Tabs>
+
+### Final Consonants (C₂)
+
+<Tabs>
+  <Tab title="Single (10)">
+    ```rust
+    VALID_FINALS_1: [
+      c, k, m, n, p, t,  // Consonants
+      i, y, o, u         // Semi-vowels
+    ]
+    ```
+    
+    <Note>
+      **k** is included for ethnic minority names (Đắk Lắk, Đắk Nông)
+    </Note>
+  </Tab>
+
+  <Tab title="Double (3)">
+    ```rust
+    VALID_FINALS_2: [[c,h], [n,g], [n,h]]
+    ```
+  </Tab>
+</Tabs>
+
+### Spelling Rules
+
+<AccordionGroup>
+  <Accordion title="C / K / Q Distribution">
+    | Consonant | Invalid before | Should use |
+    |-----------|----------------|------------|
+    | `c` | e, i, y | → `k` |
+    | `k` | a, o, u | → `c` |
+    | `q` | (always with u) | → `qu` |
+
+    ```rust
+    SPELLING_RULES: [
+      ([C], [E, I, Y], "use k instead"),
+      ([K], [A, O, U], "use c instead"),
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="G / GH Distribution">
+    | Consonant | Invalid before | Should use |
+    |-----------|----------------|------------|
+    | `g` | e | → `gh` |
+    | `gh` | a, o, u | → `g` |
+
+    ```rust
+    SPELLING_RULES: [
+      ([G], [E], "use gh instead"),
+      ([G,H], [A, O, U], "use g instead"),
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="NG / NGH Distribution">
+    | Consonant | Invalid before | Should use |
+    |-----------|----------------|------------|
+    | `ng` | e, i | → `ngh` |
+    | `ngh` | a, o, u | → `ng` |
+
+    ```rust
+    SPELLING_RULES: [
+      ([N,G], [E, I], "use ngh instead"),
+      ([N,G,H], [A, O, U], "use ng instead"),
+    ]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Valid Vowel Patterns (Whitelist)
+
+<Warning>
+  The engine uses an **inclusion approach**: only patterns in this whitelist are valid. Any combination not listed is automatically rejected.
+</Warning>
+
+<Tabs>
+  <Tab title="Diphthongs (29)">
+    ```rust core/src/data/constants.rs
+    VALID_DIPHTHONGS: [
+      // Standard Vietnamese diphthongs
+      [A, I], [A, O], [A, U], [A, Y],  // ai, ao, au, ay
+      [E, I], [E, O], [E, U],          // ei (Telex), eo, êu
+      [I, A], [I, E], [I, U],          // ia, iê, iu
+      [O, A], [O, E], [O, I],          // oa, oe, oi/ôi/ơi
+      [U, A], [U, E], [U, I], [U, O], [U, Y], [U, U],  // ua/ưa, uê, ui/ưi, uo/uô/ươ, uy, ưu
+      [Y, E],                          // yê
+      
+      // Telex intermediate states (for delayed transformations)
+      [A, A], [E, E], [O, O],          // aa→â, ee→ê, oo→ô toggle
+    ]
+    ```
+  </Tab>
+
+  <Tab title="Triphthongs (11)">
+    ```rust
+    VALID_TRIPHTHONGS: [
+      [I, E, U],        // iêu
+      [Y, E, U],        // yêu
+      [O, A, I],        // oai
+      [O, A, Y],        // oay
+      [O, E, O],        // oeo
+      [U, A, Y],        // uây
+      [U, O, I],        // uôi
+      [U, O, U],        // ươu
+      [U, Y, A],        // uya
+      [U, Y, E],        // uyê
+      [U, Y, U],        // uyu
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+**Why Inclusion over Exclusion?**
+
+| Aspect | Inclusion (whitelist) | Exclusion (blacklist) |
+|--------|-----------------------|-----------------------|
+| Coverage | Comprehensive - catches all invalid | Only catches listed patterns |
+| Maintenance | Need to add Telex states | Easy to miss edge cases |
+| Risk | False negative (need Telex states) | False positive (miss invalid) |
+
+**Invalid patterns** (for reference):
+- `ea` → sea, beach, teacher, search
+- `ou` → you, our, house, about, would
+- `yo` → yoke, York, your, beyond
+
+## Validation Rules
+
+### Rule Execution Order
+
+```rust core/src/engine/validation.rs
+const RULES: &[Rule] = &[
+    rule_has_vowel,           // Rule 1
+    rule_valid_initial,       // Rule 2
+    rule_all_chars_parsed,    // Rule 3
+    rule_spelling,            // Rule 4
+    rule_valid_final,         // Rule 5
+    rule_valid_vowel_pattern, // Rule 6
+];
+```
+
+<Steps>
+  <Step title="Rule 1: Has Vowel">
+    ```rust
+    fn rule_has_vowel(_snap: &BufferSnapshot, syllable: &Syllable) -> Option<ValidationResult> {
+        if syllable.is_empty() {
+            return Some(ValidationResult::NoVowel);
+        }
+        None
+    }
+    ```
+
+    **Examples:**
+    - ✓ `a`, `em`, `an`
+    - ✗ `bcd`, `bcdfgh` (no vowel)
+  </Step>
+
+  <Step title="Rule 2: Valid Initial">
+    ```rust
+    fn rule_valid_initial(snap: &BufferSnapshot, syllable: &Syllable) -> Option<ValidationResult> {
+        if syllable.initial.is_empty() {
+            return None;
+        }
+
+        let initial: Vec<u16> = syllable.initial.iter().map(|&i| snap.keys[i]).collect();
+
+        let is_valid = match initial.len() {
+            1 => constants::VALID_INITIALS_1.contains(&initial[0]),
+            2 => constants::VALID_INITIALS_2
+                .iter()
+                .any(|p| p[0] == initial[0] && p[1] == initial[1]),
+            3 => initial[0] == keys::N && initial[1] == keys::G && initial[2] == keys::H,
+            _ => false,
+        };
+
+        if !is_valid {
+            return Some(ValidationResult::InvalidInitial);
+        }
+        None
+    }
+    ```
+
+    **Examples:**
+    - ✓ `ba`, `ca`, `nghe`, `nghieng`
+    - ✗ `clau`, `john`, `bla`, `string` (invalid initial)
+  </Step>
+
+  <Step title="Rule 3: All Chars Parsed">
+    ```rust
+    fn rule_all_chars_parsed(snap: &BufferSnapshot, syllable: &Syllable) -> Option<ValidationResult> {
+        let parsed = syllable.initial.len()
+            + syllable.glide.map_or(0, |_| 1)
+            + syllable.vowel.len()
+            + syllable.final_c.len();
+
+        if parsed != snap.keys.len() {
+            return Some(ValidationResult::InvalidFinal);
+        }
+        None
+    }
+    ```
+
+    **Purpose:** Ensures no characters are left unparsed (would indicate invalid structure)
+  </Step>
+
+  <Step title="Rule 4: Spelling Rules">
+    ```rust
+    fn rule_spelling(snap: &BufferSnapshot, syllable: &Syllable) -> Option<ValidationResult> {
+        if syllable.initial.is_empty() || syllable.vowel.is_empty() {
+            return None;
+        }
+
+        let initial: Vec<u16> = syllable.initial.iter().map(|&i| snap.keys[i]).collect();
+        let first_vowel = snap.keys[syllable.glide.unwrap_or(syllable.vowel[0])];
+
+        for &(consonant, vowels, _msg) in constants::SPELLING_RULES {
+            if initial == consonant && vowels.contains(&first_vowel) {
+                return Some(ValidationResult::InvalidSpelling);
+            }
+        }
+
+        None
+    }
+    ```
+
+    **Examples:**
+    - ✓ `ca`, `ke`, `ghe`, `nghi`
+    - ✗ `ci`, `ce`, `cy`, `ka`, `ko`, `ku`, `ge`, `nge` (spelling violations)
+  </Step>
+
+  <Step title="Rule 5: Valid Final">
+    ```rust
+    fn rule_valid_final(snap: &BufferSnapshot, syllable: &Syllable) -> Option<ValidationResult> {
+        if syllable.final_c.is_empty() {
+            return None;
+        }
+
+        let final_c: Vec<u16> = syllable.final_c.iter().map(|&i| snap.keys[i]).collect();
+
+        let is_valid = match final_c.len() {
+            1 => constants::VALID_FINALS_1.contains(&final_c[0]),
+            2 => constants::VALID_FINALS_2
+                .iter()
+                .any(|p| p[0] == final_c[0] && p[1] == final_c[1]),
+            _ => false,
+        };
+
+        if !is_valid {
+            return Some(ValidationResult::InvalidFinal);
+        }
+        None
+    }
+    ```
+
+    **Examples:**
+    - ✓ `an`, `em`, `ong`, `anh`, `ach`
+    - ✗ `gues` (s is invalid final)
+  </Step>
+
+  <Step title="Rule 6: Valid Vowel Pattern (Whitelist)">
+    ```rust
+    fn rule_valid_vowel_pattern(
+        snap: &BufferSnapshot,
+        syllable: &Syllable,
+    ) -> Option<ValidationResult> {
+        if syllable.vowel.len() < 2 {
+            return None; // Single vowel always valid
+        }
+
+        let vowel_keys: Vec<u16> = syllable.vowel.iter().map(|&i| snap.keys[i]).collect();
+
+        match vowel_keys.len() {
+            2 => {
+                let pair = [vowel_keys[0], vowel_keys[1]];
+                if !constants::VALID_DIPHTHONGS.contains(&pair) {
+                    return Some(ValidationResult::InvalidVowelPattern);
+                }
+            }
+            3 => {
+                let triple = [vowel_keys[0], vowel_keys[1], vowel_keys[2]];
+                if !constants::VALID_TRIPHTHONGS.contains(&triple) {
+                    return Some(ValidationResult::InvalidVowelPattern);
+                }
+            }
+            _ => {
+                return Some(ValidationResult::InvalidVowelPattern);
+            }
+        }
+
+        None
+    }
+    ```
+
+    **Examples:**
+    - ✓ `ai`, `ao`, `eo`, `ia`, `iu`, `oa`, `ui`, `uy` (valid diphthongs)
+    - ✓ `iêu`, `oai`, `uôi`, `ươi` (valid triphthongs)
+    - ✗ `ou`, `yo`, `ea`, `ae` (not in whitelist)
+  </Step>
+</Steps>
+
+## Foreign Word Detection
+
+Beyond validation, the engine detects foreign word patterns to skip transformation:
+
+```rust core/src/engine/validation.rs
+pub fn is_foreign_word_pattern(
+    buffer_keys: &[u16],
+    buffer_tones: &[u8],
+    modifier_key: u16,
+) -> bool
+```
+
+**Detection Patterns:**
+
+<CardGroup cols={2}>
+  <Card title="Invalid Vowel Patterns" icon="a">
+    - `ou` (you, our, house)
+    - `yo` (yoke, York)
+    - `ea` (search, beach)
+  </Card>
+  
+  <Card title="Consonant Clusters" icon="bars-staggered">
+    - T+R (metric, matrix)
+    - P+R (spectrum)
+    - C+R (across)
+  </Card>
+</CardGroup>
+
+**Special Case:** Skip check when buffer has horn transforms (ư, ơ, ươ) - indicates intentional Vietnamese input (e.g., "rượu")
+
+## Validation API
+
+```rust core/src/engine/validation.rs
+/// Validate buffer as Vietnamese syllable
+pub fn validate(snap: &BufferSnapshot) -> ValidationResult
+
+/// Quick check (keys only - legacy)
+pub fn is_valid(buffer_keys: &[u16]) -> bool
+
+/// Full validation with modifier info
+pub fn is_valid_with_tones(keys: &[u16], tones: &[u8]) -> bool
+
+/// Pre-transformation validation (excludes vowel pattern check)
+pub fn is_valid_for_transform(buffer_keys: &[u16]) -> bool
+
+/// Foreign word pattern detection
+pub fn is_foreign_word_pattern(
+    buffer_keys: &[u16],
+    buffer_tones: &[u8],
+    modifier_key: u16,
+) -> bool
+
+pub enum ValidationResult {
+    Valid,
+    InvalidInitial,
+    InvalidFinal,
+    InvalidSpelling,
+    InvalidVowelPattern,
+    NoVowel,
+}
+```
+
+## Integration with Engine
+
+```
+on_key(key)
+│
+├─ [is_modifier(key)?]
+│  │
+│  ├─ ★ VALIDATION: Before transform
+│  │   └─ is_valid(buffer)?
+│  │       ├─ NO  → return NONE (don't transform)
+│  │       └─ YES → continue transform
+│  │
+│  └─ Apply transformation
+│
+└─ [is_letter(key)?] → push to buffer
+```
+
+## Test Coverage
+
+<Tabs>
+  <Tab title="Valid Syllables">
+    ```rust
+    const VALID: &[&str] = &[
+        "ba", "ca", "an", "em", "gi", "gia", "giau",
+        "ke", "ki", "ky", "nghe", "nghi", "nghieng",
+        "truong", "nguoi", "duoc",
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Invalid - No Vowel">
+    ```rust
+    const INVALID_NO_VOWEL: &[&str] = &["bcd", "bcdfgh"];
+    ```
+  </Tab>
+
+  <Tab title="Invalid - Bad Initial">
+    ```rust
+    const INVALID_INITIAL: &[&str] = &[
+        "clau", "john", "bla", "string", "chrome"
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Invalid - Spelling">
+    ```rust
+    const INVALID_SPELLING: &[&str] = &[
+        "ci", "ce", "cy", "ka", "ko", "ku",
+        "ngi", "nge", "ge"
+    ];
+    ```
+  </Tab>
+
+  <Tab title="Invalid - Foreign">
+    ```rust
+    const INVALID_FOREIGN: &[&str] = &[
+        "exp", "expect", "test", "claudeco",
+        "claus", "gues"
+    ];
+    ```
+  </Tab>
+</Tabs>
+
+## Performance Considerations
+
+<CardGroup cols={2}>
+  <Card title="Fast Failure" icon="forward-fast">
+    Rules execute sequentially, first failure returns immediately
+  </Card>
+  <Card title="Constant Lookup" icon="hashtag">
+    All validation data in const arrays, O(1) access
+  </Card>
+  <Card title="No Allocations" icon="memory">
+    Uses slices and indices, no heap allocations
+  </Card>
+  <Card title="Zero-Copy" icon="copy">
+    BufferSnapshot uses references to original buffer
+  </Card>
+</CardGroup>
+
+---
+
+**See Also:**
+- [Core Engine](/technical/core-engine) - 7-stage processing pipeline
+- [Vietnamese Language System](/technical/vietnamese-language-system) - Language foundations
+- [System Architecture](/technical/system-architecture) - High-level overview

@@ -1,0 +1,517 @@
+---
+title: Frequently Asked Questions
+description: Common questions about Gõ Nhanh Vietnamese input method
+---
+
+## Privacy & Security
+
+<AccordionGroup>
+  <Accordion title="Does Gõ Nhanh collect or send my typing data?">
+    **No. Absolutely not.**
+
+    Gõ Nhanh is:
+    - **100% offline** - No network requests, no telemetry, no analytics
+    - **No cloud services** - Everything runs locally on your Mac
+    - **Open source** - You can verify the code yourself
+
+    From the README:
+    > **Ba Không (Three No's) Commitment:**
+    > - 🚫 No fees - Free forever, no Pro version
+    > - 🚫 No ads - No popups, no interruptions  
+    > - 🚫 No tracking - 100% offline, open source
+  </Accordion>
+
+  <Accordion title="Why does Gõ Nhanh need Accessibility permission?">
+    Gõ Nhanh needs Accessibility permission to:
+
+    1. **Intercept keyboard events** - Capture keystrokes before they reach apps
+    2. **Send replacement text** - Replace Latin characters with Vietnamese diacritics
+    3. **Detect focused elements** - Identify address bars, search fields, etc. for smart replacement
+
+    **What it does NOT do:**
+    - Record your keystrokes
+    - Track which apps you use
+    - Access clipboard or files
+    - Connect to the internet
+
+    The permission is used **only** for Vietnamese input processing. All code is open source - you can verify this.
+  </Accordion>
+
+  <Accordion title="Is my data safe with Gõ Nhanh running?">
+    Yes. Gõ Nhanh:
+
+    - **Processes keystrokes in-memory only** - No writing to disk (except user settings)
+    - **No logging by default** - Debug mode is manual opt-in and writes to `/tmp/`
+    - **No cloud sync** - Settings stored in macOS Preferences locally
+    - **No third-party SDKs** - Pure Rust + Swift, no analytics frameworks
+
+    **Memory profile:**
+    - ~5MB RAM usage
+    - 64-character circular buffer (cleared on word boundaries)
+    - Settings stored in `~/Library/Preferences/org.gonhanh.*`
+  </Accordion>
+
+  <Accordion title="Can I use Gõ Nhanh for work/sensitive documents?">
+    Yes. Gõ Nhanh is safe for:
+
+    - Corporate environments
+    - Confidential documents  
+    - Password managers (typing passwords)
+    - Medical/legal software
+
+    **Security features:**
+    - Respects macOS Secure Input mode (auto-disables during password entry)
+    - No network access
+    - BSD-3-Clause license (permissive for commercial use)
+
+    Many users report using it professionally at companies and government organizations.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Platform Support
+
+<AccordionGroup>
+  <Accordion title="Which platforms does Gõ Nhanh support?">
+    **Current status:**
+
+    | Platform | Status | Installation |
+    |----------|--------|-------------|
+    | **macOS** | ✅ Production | Homebrew or manual DMG |
+    | **Linux** | 🧪 Beta | Build from source |
+    | **Windows** | 🧪 Beta | Build from source |
+
+    **macOS requirements:**
+    - macOS 13.0 (Ventura) or later
+    - Apple Silicon (M1/M2/M3/M4) or Intel
+
+    <Info>
+    All platforms use the **same Rust core engine**. Only UI and keyboard hooks differ.
+    </Info>
+  </Accordion>
+
+  <Accordion title="When will Linux/Windows versions be stable?">
+    **Linux** is in active beta:
+    - Uses Fcitx5 framework
+    - See [install-linux.md](https://github.com/khaphanspace/gonhanh.org/blob/main/docs/install-linux.md)
+
+    **Windows** is in active beta:
+    - Uses SetWindowsHookEx for keyboard hooks
+    - See [install-windows.md](https://github.com/khaphanspace/gonhanh.org/blob/main/docs/install-windows.md)
+
+    Contributions welcome! Check [CONTRIBUTING.md](https://github.com/khaphanspace/gonhanh.org/blob/main/CONTRIBUTING.md).
+  </Accordion>
+
+  <Accordion title="Can I use Gõ Nhanh on iPad/iPhone?">
+    Not yet. iOS/iPadOS have different keyboard extension APIs.
+
+    Current focus is desktop platforms (macOS, Linux, Windows). Mobile support may come in the future if there's demand.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Features & Functionality
+
+<AccordionGroup>
+  <Accordion title="What's the difference between Telex and VNI?">
+    Both are Vietnamese input methods. Choose based on your habit:
+
+    ### Telex (default)
+    Uses **letters** for diacritics:
+    - `s/f/r/x/j` for tones (sắc/huyền/hỏi/ngã/nặng)
+    - `aa/aw/ee/oo/ow/uw` for vowel marks
+    - `dd` for đ
+
+    **Example:** `tuong` + `w` = `tương`
+
+    ### VNI
+    Uses **numbers** for diacritics:
+    - `1/2/3/4/5` for tones
+    - `6/7/8/9` for vowel marks
+
+    **Example:** `tuong` + `7` = `tương`
+
+    <Info>
+    Switch in Settings → Input Method → Choose Telex or VNI
+    </Info>
+  </Accordion>
+
+  <Accordion title="How does auto-restore for English words work?">
+    When typing English with Telex, some letters trigger Vietnamese marks:
+
+    | Type | Without Auto-restore | With Auto-restore |
+    |------|---------------------|-------------------|
+    | `text ` | `têt ` ❌ | `text ` ✅ |
+    | `expect ` | `ễpct ` ❌ | `expect ` ✅ |
+    | `with ` | `ưith ` ❌ | `with ` ✅ |
+
+    **How it works:**
+    1. Type the word (e.g., `text`)
+    2. Gõ Nhanh initially shows `têt`
+    3. Press **Space**
+    4. Engine checks if result is invalid Vietnamese
+    5. If invalid → auto-restores to original `text`
+
+    **Limitations:**
+    - Only triggers on Space
+    - Can't detect words that form valid Vietnamese (e.g., `mix` → `mĩ`)
+    - Workaround: Press ESC to restore, or toggle Gõ Nhanh off (`Ctrl+Space`)
+  </Accordion>
+
+  <Accordion title="Can Gõ Nhanh auto-capitalize sentences?">
+    Yes! Gõ Nhanh automatically capitalizes the first letter after:
+
+    - `.` (period) + Space
+    - `!` (exclamation) + Space
+    - `?` (question mark) + Space
+    - Enter key (new line)
+
+    **Example:**
+    ```
+    Type: "xin chào. bạn khỏe không?"
+    Result: "Xin chào. Bạn khỏe không?"
+    ```
+
+    Enable/disable in Settings → Auto-capitalize first letter of sentence
+  </Accordion>
+
+  <Accordion title="How do I add custom shortcuts (gõ tắt)?">
+    **Custom shortcuts** let you expand abbreviations:
+
+    <Steps>
+      <Step title="Open Settings">
+        Menu bar icon → Settings → Shortcuts tab
+      </Step>
+      <Step title="Add shortcut">
+        Click **+** button
+
+        - **From:** `ko` (what you type)
+        - **To:** `không` (what it expands to)
+      </Step>
+      <Step title="Use it">
+        Type `ko` + Space → automatically becomes `không`
+      </Step>
+    </Steps>
+
+    **Common examples:**
+    - `vn` → `Việt Nam`
+    - `tpho` → `thành phố Hồ Chí Minh`
+    - `dc` → `được`
+  </Accordion>
+
+  <Accordion title="What is per-app mode and delay customization?">
+    **Per-app mode** lets Gõ Nhanh remember on/off state for each app:
+
+    - Code in **VS Code** with Gõ Nhanh OFF
+    - Switch to **Slack** → auto-enables
+    - Switch back to **VS Code** → auto-disables
+
+    **Per-app delay** solves character swallowing in specific apps:
+
+    - **Chrome address bar** → Selection mode (auto-detected)
+    - **JetBrains IDEs** → Selection mode (auto-detected)  
+    - **Claude Code/Cursor** → Manual delay adjustment needed
+
+    Configure in: Settings → Advanced → Per-app customization
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Performance & Compatibility
+
+<AccordionGroup>
+  <Accordion title="How fast is Gõ Nhanh?">
+    **Performance specs:**
+
+    | Metric | Value | How it feels |
+    |--------|-------|-------------|
+    | Latency | < 1ms | Imperceptible |
+    | RAM usage | ~5MB | Minimal |
+    | CPU (idle) | 0% | No background processing |
+    | CPU (typing) | 1-3% spikes | Instant response |
+
+    **Breakdown:**
+    - Rust engine processing: ~100-200μs
+    - macOS event handling: ~100-200μs  
+    - FFI overhead: ~50μs
+    - **Total: 300-500μs** (well under 1ms)
+
+    <Info>
+    160+ automated tests ensure performance stays consistent across updates.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Does Gõ Nhanh work in all apps?">
+    **Works in 99% of apps**, including:
+
+    ✅ **Browsers**: Chrome, Safari, Firefox, Edge, Arc  
+    ✅ **IDEs**: VS Code, Xcode, JetBrains, Zed, Sublime  
+    ✅ **Productivity**: Notion, Obsidian, Google Docs, Microsoft Office  
+    ✅ **Communication**: Slack, Discord, Telegram, Messages, Zalo  
+    ✅ **Terminal**: Terminal.app, iTerm2, Ghostty  
+    ✅ **Other**: Figma, Linear, ClickUp, Zendesk, etc.
+
+    **Special handling for:**
+    - Address bars (Chrome, Safari, Arc) - uses selection instead of backspace
+    - JetBrains autocomplete - detected via bundle ID
+    - Excel cell editing - optimized replacement
+
+    **Not recommended for:**
+    - Password fields (auto-disables via Secure Input)
+    - Terminal commands (use `Ctrl+Space` to toggle off)
+  </Accordion>
+
+  <Accordion title="Can I use Gõ Nhanh with other input methods?">
+    Yes, but **only one Vietnamese IME should be active at a time**.
+
+    **Recommended setup:**
+    ```
+    System Settings → Keyboard → Input Sources:
+    ✅ English (ABC)  
+    ✅ GoNhanh (for Vietnamese)
+    ❌ Vietnamese (Telex/VNI) - remove this
+    ```
+
+    **Other language input methods work fine:**
+    - Japanese (Hiragana/Katakana)
+    - Chinese (Pinyin/Cangjie)  
+    - Korean (2-Set Korean)
+    - French, German, Spanish, etc.
+
+    Gõ Nhanh **auto-disables** when you switch to non-Latin input sources and **re-enables** when you switch back to English.
+  </Accordion>
+
+  <Accordion title="Why is there a delay in Claude Code / Cursor / Windsurf?">
+    **These IDEs have AI autocomplete** that introduces latency.
+
+    When Gõ Nhanh sends:
+    1. Backspace (to delete old char)
+    2. New character (to insert diacritic)
+
+    The IDE's autocomplete can intercept between steps, causing the first character to be lost.
+
+    **Solution:**
+    Add a delay so backspace completes before inserting:
+    1. Settings → Advanced → Per-app customization
+    2. Add your IDE
+    3. Increase Delay slider to "Very High" (purple)
+
+    This adds ~0.8ms delay - imperceptible to typing but enough for the IDE to catch up.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Comparison with Other IMEs
+
+<AccordionGroup>
+  <Accordion title="How is Gõ Nhanh different from macOS built-in Vietnamese?">
+    | Feature | macOS Vietnamese | Gõ Nhanh |
+    |---------|-----------------|----------|
+    | **Pre-edit window** | ✅ Black box (annoying) | ❌ Edit in place |
+    | **Auto-restore English** | ❌ `text` → `têt` | ✅ `text` → `text` |
+    | **ESC to restore** | ❌ | ✅ |
+    | **Per-app mode** | ❌ | ✅ |
+    | **Smart fixes** | ❌ | ✅ Chrome, Arc, IDEs |
+    | **Performance** | Slow (system IMK) | Fast (sub-1ms Rust) |
+    | **Open source** | ❌ | ✅ BSD-3-Clause |
+    | **Privacy** | Unknown | 100% offline, no tracking |
+  </Accordion>
+
+  <Accordion title="Gõ Nhanh vs OpenKey/EVKey/GoTiengViet?">
+    ### vs OpenKey
+    - **Same approach**: System-wide keyboard hook
+    - **Gõ Nhanh advantages**:
+      - Rust core (faster, safer)
+      - Auto-restore English words
+      - Per-app delay customization
+      - Modern SwiftUI interface
+      - Active development (2025)
+
+    ### vs EVKey
+    - EVKey is **Windows-focused**
+    - Gõ Nhanh is **cross-platform** (macOS primary, Linux/Windows beta)
+
+    ### vs GoTiengViet
+    - Similar features
+    - Gõ Nhanh adds:
+      - Validation-first engine (7-stage pipeline)
+      - Better Chrome/IDE compatibility
+      - Lower latency (sub-1ms vs 2-5ms)
+
+    **All are good choices!** Gõ Nhanh differentiates with:
+    - Modern architecture (Rust + Swift)
+    - Extreme performance focus
+    - Scientific documentation (linguistics + algorithms)
+  </Accordion>
+
+  <Accordion title="Why not just use UniKey?">
+    UniKey is **legendary** and Gõ Nhanh is built on its legacy.
+
+    **UniKey legacy:**
+    - First widely-adopted Vietnamese IME (1998-2016)
+    - Pioneered Telex/VNI input
+    - Established user expectations
+
+    **Why Gõ Nhanh?**
+    - UniKey **not maintained** since 2016
+    - Doesn't support modern macOS (Sonoma, Sequoia)
+    - 32-bit only (macOS dropped 32-bit in Catalina)
+    - No fix for Chrome address bar, Claude Code, etc.
+
+    Gõ Nhanh is a **spiritual successor** with modern implementation.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Troubleshooting & Support
+
+<AccordionGroup>
+  <Accordion title="Where do I report bugs or request features?">
+    **GitHub Issues** is the main channel:
+    - Bug reports: [github.com/khaphanspace/gonhanh.org/issues](https://github.com/khaphanspace/gonhanh.org/issues)
+    - Feature requests: Use "Feature Request" template
+    - Questions: GitHub Discussions
+
+    **Before reporting:**
+    1. Check existing issues
+    2. Update to latest version
+    3. Include:
+       - macOS version (`sw_vers`)
+       - GoNhanh version (menu bar → About)
+       - Steps to reproduce
+  </Accordion>
+
+  <Accordion title="How do I enable debug mode?">
+    Debug logging helps diagnose issues:
+
+    **Enable:**
+    ```bash
+    touch /tmp/gonhanh_debug.log
+    ```
+
+    **View logs:**
+    ```bash
+    tail -f /tmp/gonhanh_debug.log
+    ```
+
+    **Log output:**
+    ```
+    [14:23:15.342] K:0 → Action:Send, BS:1, Out:[á]
+    [14:23:16.123] M: setMethod(VNI)
+    [14:23:20.000] P: RAM=5.1MB keys=4729
+    ```
+
+    **Disable:**
+    ```bash
+    rm /tmp/gonhanh_debug.log
+    ```
+
+    <Warning>
+    Debug mode impacts performance. Only enable when troubleshooting.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Can I contribute to Gõ Nhanh?">
+    **Yes! Contributions welcome.**
+
+    Ways to contribute:
+    1. **Code**: Rust engine, Swift UI, platform support
+    2. **Testing**: Report bugs, test beta features  
+    3. **Documentation**: Improve guides, translations
+    4. **Financial**: [GitHub Sponsors](https://github.com/sponsors/khaphanspace)
+
+    See [CONTRIBUTING.md](https://github.com/khaphanspace/gonhanh.org/blob/main/CONTRIBUTING.md) for guidelines.
+
+    **Development setup:**
+    ```bash
+    git clone https://github.com/khaphanspace/gonhanh.org
+    cd gonhanh.org
+    make setup
+    make test
+    make build
+    ```
+  </Accordion>
+
+  <Accordion title="Is there a support community?">
+    **GitHub Discussions** is the main forum:
+    - Ask questions
+    - Share tips
+    - Help other users
+
+    **Other channels:**
+    - Unikorn.vn (Vietnamese indie products)
+    - J2TEAM Launch (Vietnamese dev community)
+
+    No official Discord/Slack yet, but may create if there's demand.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Licensing & Commercial Use
+
+<AccordionGroup>
+  <Accordion title="What license is Gõ Nhanh under?">
+    **BSD-3-Clause** (permissive open source)
+
+    You can:
+    - ✅ Use commercially
+    - ✅ Modify the code
+    - ✅ Distribute (original or modified)
+    - ✅ Use in proprietary software
+
+    You must:
+    - Include copyright notice
+    - Include license text
+    - Not use author's name to promote without permission
+
+    See [LICENSE](https://github.com/khaphanspace/gonhanh.org/blob/main/LICENSE) for details.
+  </Accordion>
+
+  <Accordion title="Can I use Gõ Nhanh at my company?">
+    **Yes, absolutely.**
+
+    Gõ Nhanh is free for:
+    - Personal use
+    - Commercial use  
+    - Government use
+    - Educational use
+
+    No attribution required (though appreciated!).
+
+    **Enterprise considerations:**
+    - 100% offline (no data leaving network)
+    - No licensing fees
+    - Open source (auditable)
+    - BSD-3-Clause (permissive)
+  </Accordion>
+
+  <Accordion title="Will Gõ Nhanh always be free?">
+    **Yes. Guaranteed.**
+
+    From the "Ba Không" commitment:
+    > 🚫 **No fees** - Free forever, no Pro version
+
+    The project is funded by:
+    - Personal time (author Kha Phan)
+    - GitHub Sponsors (optional donations)
+    - Community contributions
+
+    **No plans for:**
+    - Paid Pro version
+    - Subscription model
+    - Ads or sponsorships
+    - Selling user data (we don't collect any!)
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Still have questions?
+
+Check the [Common Issues](/troubleshooting/common-issues) page or ask on [GitHub Discussions](https://github.com/khaphanspace/gonhanh.org/discussions).

@@ -1,0 +1,374 @@
+---
+title: Linux Installation
+description: Install and configure Gõ Nhanh on Linux using Fcitx5 (Beta)
+---
+
+<Warning>
+  Linux support is currently in **beta**. Some features may not work as expected. Please report issues on [GitHub](https://github.com/khaphanspace/gonhanh.org/issues).
+</Warning>
+
+Gõ Nhanh for Linux uses the Fcitx5 input method framework to provide Vietnamese input across all applications.
+
+## Quick Installation
+
+Run the automated installation script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/khaphanspace/gonhanh.org/main/scripts/setup/linux.sh | bash
+```
+
+<Info>
+  After installation, **log out and log back in** to complete the setup.
+</Info>
+
+## Requirements
+
+### Runtime Dependencies
+- **Fcitx5** — Input method framework
+- **Rust core library** — Bundled with installation
+
+### Supported Distributions
+- Ubuntu 20.04+
+- Debian 11+
+- Fedora 35+
+- Arch Linux
+- Other distributions with Fcitx5 support
+
+## Manual Installation
+
+If you prefer to install manually or the script doesn't work:
+
+<Steps>
+  <Step title="Install Fcitx5">
+    <Tabs>
+      <Tab title="Ubuntu/Debian">
+        ```bash
+        sudo apt install fcitx5 fcitx5-configtool
+        ```
+      </Tab>
+
+      <Tab title="Fedora">
+        ```bash
+        sudo dnf install fcitx5 fcitx5-configtool
+        ```
+      </Tab>
+
+      <Tab title="Arch Linux">
+        ```bash
+        sudo pacman -S fcitx5 fcitx5-configtool
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure environment variables">
+    Add these lines to your `~/.bashrc` or `~/.zshrc`:
+
+    ```bash
+    export GTK_IM_MODULE=fcitx
+    export QT_IM_MODULE=fcitx
+    export XMODIFIERS=@im=fcitx
+    export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
+    ```
+
+    Then reload your shell config:
+    ```bash
+    source ~/.bashrc
+    ```
+  </Step>
+
+  <Step title="Download and install Gõ Nhanh">
+    Follow the installation script or build from source (see [Build from Source](#build-from-source)).
+  </Step>
+
+  <Step title="Restart Fcitx5">
+    ```bash
+    fcitx5 -r &
+    ```
+  </Step>
+
+  <Step title="Add Gõ Nhanh to input methods">
+    ```bash
+    fcitx5-configtool
+    ```
+    
+    In the configuration tool:
+    1. Go to **Input Method** tab
+    2. Click **Add**
+    3. Search for **GoNhanh** or **Gõ Nhanh**
+    4. Add it to your input methods
+  </Step>
+</Steps>
+
+## Usage
+
+### Keyboard Shortcuts
+
+| Shortcut | Function |
+|----------|----------|
+| `Ctrl + Space` or `Super + Space` | Switch input methods (depends on desktop environment) |
+
+<Note>
+  The exact keyboard shortcut to switch input methods depends on your Fcitx5 configuration and desktop environment.
+</Note>
+
+### Command-Line Interface
+
+Gõ Nhanh provides a CLI for quick configuration:
+
+```bash
+# Toggle Vietnamese input on/off
+gn
+
+# Enable Vietnamese input
+gn on
+
+# Disable Vietnamese input
+gn off
+
+# Switch to VNI mode
+gn vni
+
+# Switch to Telex mode
+gn telex
+
+# Check current status
+gn status
+
+# Update to latest version
+gn update
+
+# Uninstall
+gn uninstall
+
+# Show version
+gn version
+
+# Show help
+gn help
+```
+
+### Input Methods
+
+<Tabs>
+  <Tab title="Telex (Default)">
+    | Type | Result |
+    |------|--------|
+    | `s`, `f`, `r`, `x`, `j` | sắc, huyền, hỏi, ngã, nặng |
+    | `aa`, `oo`, `ee` | â, ô, ê |
+    | `aw`, `ow`, `uw` | ă, ơ, ư |
+    | `w` (after consonant) | ư |
+    | `dd` | đ |
+
+    **Example:** `vieetj` → `việt`
+  </Tab>
+
+  <Tab title="VNI">
+    | Type | Result |
+    |------|--------|
+    | `1`, `2`, `3`, `4`, `5` | sắc, huyền, hỏi, ngã, nặng |
+    | `6` | â/ô/ê |
+    | `7` | ư/ơ |
+    | `8` | ă |
+    | `9` | đ |
+
+    **Example:** `vie65t` → `việt`
+  </Tab>
+</Tabs>
+
+## File Locations
+
+Gõ Nhanh installs files in the following locations:
+
+| File | Location |
+|------|----------|
+| Fcitx5 addon | `~/.local/lib/fcitx5/gonhanh.so` |
+| Addon config | `~/.local/share/fcitx5/addon/gonhanh.conf` |
+| Input method config | `~/.local/share/fcitx5/inputmethod/gonhanh.conf` |
+| Rust core library | `~/.local/lib/libgonhanh_core.so` |
+| CLI binary | `~/.local/bin/gn` |
+
+## Troubleshooting
+
+### Command `gn` not found
+
+Reload your shell configuration:
+```bash
+source ~/.bashrc
+# or for zsh
+source ~/.zshrc
+```
+
+Make sure `~/.local/bin` is in your PATH.
+
+### Can't type Vietnamese
+
+<Steps>
+  <Step title="Log out and log back in">
+    Environment variables need to be reloaded.
+  </Step>
+
+  <Step title="Check if Fcitx5 is running">
+    ```bash
+    pgrep fcitx5
+    ```
+    
+    If not running, start it:
+    ```bash
+    fcitx5 -d
+    ```
+  </Step>
+
+  <Step title="Verify environment variables">
+    ```bash
+    echo $GTK_IM_MODULE
+    ```
+    
+    Should output: `fcitx`
+  </Step>
+
+  <Step title="Check if Gõ Nhanh is in input methods">
+    ```bash
+    fcitx5-configtool
+    ```
+    
+    Go to **Input Method** → Ensure **GoNhanh** is listed
+  </Step>
+</Steps>
+
+### Fcitx5 addon not loading
+
+Check Fcitx5 logs for errors:
+```bash
+fcitx5 --verbose=*:4
+```
+
+Verify the library can be loaded:
+```bash
+ldd ~/.local/lib/fcitx5/gonhanh.so
+```
+
+### Missing symbols error
+
+Check that `LD_LIBRARY_PATH` includes `~/.local/lib`:
+```bash
+echo $LD_LIBRARY_PATH
+```
+
+Should include: `/home/yourusername/.local/lib`
+
+## Build from Source
+
+For advanced users who want to build from source:
+
+<Steps>
+  <Step title="Install build dependencies">
+    <Tabs>
+      <Tab title="Ubuntu/Debian">
+        ```bash
+        sudo apt install cmake pkg-config fcitx5 fcitx5-dev \
+          libfcitx5core-dev libfcitx5config-dev libfcitx5utils-dev \
+          libxkbcommon-dev
+        ```
+      </Tab>
+
+      <Tab title="Fedora">
+        ```bash
+        sudo dnf install cmake pkg-config fcitx5 fcitx5-devel \
+          libxkbcommon-devel
+        ```
+      </Tab>
+
+      <Tab title="Arch Linux">
+        ```bash
+        sudo pacman -S cmake pkg-config fcitx5 xkbcommon
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/khaphanspace/gonhanh.org.git
+    cd gonhanh.org
+    ```
+  </Step>
+
+  <Step title="Build the project">
+    ```bash
+    cd platforms/linux
+    ./scripts/build.sh
+    ```
+
+    For debug build:
+    ```bash
+    ./scripts/build.sh --debug
+    ```
+  </Step>
+
+  <Step title="Install">
+    User-local installation (recommended, no sudo):
+    ```bash
+    ./scripts/install.sh
+    ```
+
+    Or system-wide:
+    ```bash
+    cd build
+    sudo make install
+    ```
+  </Step>
+</Steps>
+
+## Updating
+
+Update to the latest version:
+
+```bash
+gn update
+```
+
+Or re-run the installation script:
+```bash
+curl -fsSL https://raw.githubusercontent.com/khaphanspace/gonhanh.org/main/scripts/setup/linux.sh | bash
+```
+
+## Uninstallation
+
+Using the CLI:
+```bash
+gn uninstall
+```
+
+Or manually remove files:
+```bash
+rm -rf ~/.local/lib/fcitx5/gonhanh.so \
+       ~/.local/share/fcitx5/addon/gonhanh.conf \
+       ~/.local/share/fcitx5/inputmethod/gonhanh.conf \
+       ~/.local/lib/libgonhanh_core.so \
+       ~/.local/bin/gn
+```
+
+Then restart Fcitx5:
+```bash
+fcitx5 -r
+```
+
+## Desktop Environment Support
+
+Gõ Nhanh works with all major Linux desktop environments:
+
+- **GNOME** — Tested on Ubuntu, Fedora
+- **KDE Plasma** — Full support
+- **XFCE** — Full support
+- **Cinnamon** — Tested on Linux Mint
+- **MATE** — Full support
+- **i3/Sway** — Works with proper Fcitx5 configuration
+
+<Note>
+  Some tiling window managers may require additional Fcitx5 configuration. Check your WM's documentation for input method setup.
+</Note>
+
+## License
+
+Gõ Nhanh for Linux is licensed under **GPL-3.0-or-later** (same as Fcitx5).

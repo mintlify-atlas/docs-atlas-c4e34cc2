@@ -1,0 +1,548 @@
+---
+title: Core Engine Processing Pipeline
+description: Deep dive into the 7-stage validation-first processing pipeline of the Vietnamese IME engine
+---
+
+## Overview
+
+The Gõ Nhanh core engine implements a **validation-first, pattern-based** architecture for Vietnamese input processing. Every keystroke passes through a 7-stage pipeline that validates, transforms, and outputs Vietnamese characters.
+
+## Design Principles
+
+<CardGroup cols={2}>
+  <Card title="Validation First" icon="shield-check">
+    Check if buffer is valid Vietnamese **before** transforming
+  </Card>
+  <Card title="Pattern-Based" icon="layer-group">
+    Scan entire buffer for patterns, not case-by-case
+  </Card>
+  <Card title="Longest-Match-First" icon="arrows-left-right">
+    Prioritize longer patterns ("nghieng" over "ng")
+  </Card>
+  <Card title="Double-Key Revert" icon="rotate-left">
+    Press modifier twice to undo transformation
+  </Card>
+</CardGroup>
+
+## 7-Stage Processing Pipeline
+
+```rust core/src/engine/mod.rs
+on_key_ext(key, caps, ctrl, shift) → Result
+│
+├─► [!enabled || ctrl?] ──► clear buffer ──► return NONE
+│
+├─► [is_break(key)?] ──► check shortcuts ──► clear buffer ──► return
+│
+├─► [key == DELETE?] ──► pop buffer ──► return NONE
+│
+└─► process(key, caps, shift)
+    │
+    ├── STAGE 1: Stroke (d → đ)
+    │   └── try_stroke() - scan buffer for un-stroked 'd'
+    │
+    ├── STAGE 2: Tone (circumflex/horn/breve)
+    │   └── try_tone() - apply aa→â, ow→ơ, aw→ă patterns
+    │
+    ├── STAGE 3: Mark (sắc/huyền/hỏi/ngã/nặng)
+    │   └── try_mark() - find vowel position, apply mark
+    │
+    ├── STAGE 4: Remove (z/0)
+    │   └── handle_remove() - clear mark or tone
+    │
+    ├── STAGE 5: W-Vowel (Telex only)
+    │   └── try_w_as_vowel() - "w" → "ư" with validation
+    │
+    ├── STAGE 6: Normal Letter
+    │   └── handle_normal_letter() - push to buffer
+    │
+    └── STAGE 7: Word Boundary Shortcut
+        └── try_word_boundary_shortcut() - expand abbreviations
+```
+
+## Stage Details
+
+### Stage 1: Stroke Transformation
+
+**Purpose:** Convert `d` to `đ` (đê - Vietnamese letter with stroke)
+
+```rust core/src/engine/transform.rs
+pub fn apply_stroke(buf: &mut Buffer) -> TransformResult {
+    // Find first 'd' that hasn't been stroked
+    for i in 0..buf.len() {
+        if let Some(c) = buf.get_mut(i) {
+            if c.key == keys::D && !c.stroke {
+                c.stroke = true;
+                return TransformResult::success(vec![i]);
+            }
+        }
+    }
+    TransformResult::none()
+}
+```
+
+<Accordion title="Example: 'Dod' → 'Đo'">
+  ```
+  Buffer: ['D', 'o', 'd']
+  Modifier key: 'd' detected
+  
+  1. Scan buffer for un-stroked 'd'
+  2. Found at position 0
+  3. Mark D.stroke = true
+  4. Result: "Đo" (remove trigger 'd')
+  
+  Double-key revert: "Đo" + 'd' → "Dod"
+  ```
+</Accordion>
+
+### Stage 2: Tone Transformation
+
+**Purpose:** Apply vowel diacritics (circumflex ^, horn ʼ, breve ˘)
+
+<Tabs>
+  <Tab title="Telex">
+    ```
+    TELEX TONE MODIFIERS:
+    ├── 'a' → aa (â - circumflex)
+    ├── 'e' → ee (ê - circumflex)
+    ├── 'o' → oo (ô - circumflex)
+    ├── 'w' → horn (ơ, ư) or breve (ă)
+    └── 'd' → dd (đ - stroke)
+    ```
+  </Tab>
+
+  <Tab title="VNI">
+    ```
+    VNI TONE MODIFIERS:
+    ├── '6' → circumflex (â, ê, ô)
+    ├── '7' → horn (ơ, ư)
+    ├── '8' → breve (ă)
+    └── '9' → stroke (đ)
+    ```
+  </Tab>
+</Tabs>
+
+**UO Compound Special Handling:**
+
+```rust core/src/engine/transform.rs
+// When applying horn modifier to buffer with "uo" or "ou" adjacent
+let buffer_keys: Vec<u16> = buf.iter().map(|c| c.key).collect();
+targets = Phonology::find_horn_positions(&buffer_keys, &vowel_positions);
+
+// Example: "duoc" + 'w' → "dươc"
+// Both 'u' and 'o' receive horn modifier
+```
+
+<Accordion title="Example: 'duoc' + 'w' → 'dươc'">
+  ```
+  Buffer: ['d', 'u', 'o', 'c']
+  Modifier key: 'w' (horn)
+  
+  1. Validate: "duoc" → VALID ✓
+  2. Find UO compound at positions 1-2
+  3. Apply HORN to both: u→ư, o→ơ
+  4. Return: backspace=3, "ươc"
+  
+  Output: delete "uoc", type "ươc" → "dươc"
+  ```
+</Accordion>
+
+### Stage 3: Mark Transformation
+
+**Purpose:** Apply tone marks (sắc/huyền/hỏi/ngã/nặng)
+
+<Tabs>
+  <Tab title="Telex">
+    ```
+    TELEX MARK MODIFIERS:
+    ├── 's' → sắc (1)
+    ├── 'f' → huyền (2)
+    ├── 'r' → hỏi (3)
+    ├── 'x' → ngã (4)
+    ├── 'j' → nặng (5)
+    └── 'z' → remove mark
+    ```
+  </Tab>
+
+  <Tab title="VNI">
+    ```
+    VNI MARK MODIFIERS:
+    ├── '1' → sắc
+    ├── '2' → huyền
+    ├── '3' → hỏi
+    ├── '4' → ngã
+    ├── '5' → nặng
+    └── '0' → remove mark
+    ```
+  </Tab>
+</Tabs>
+
+**Mark Placement Algorithm:**
+
+```rust core/src/engine/transform.rs
+pub fn apply_mark(buf: &mut Buffer, mark_value: u8, modern: bool) -> TransformResult {
+    let vowels = utils::collect_vowels(buf);
+    if vowels.is_empty() {
+        return TransformResult::none();
+    }
+
+    // Find position using phonology rules
+    let last_vowel_pos = vowels.last().map(|v| v.pos).unwrap_or(0);
+    let has_final = utils::has_final_consonant(buf, last_vowel_pos);
+    let has_qu = utils::has_qu_initial(buf);
+    let has_gi = utils::has_gi_initial(buf);
+    let pos = Phonology::find_tone_position(&vowels, has_final, modern, has_qu, has_gi);
+
+    // Clear any existing mark first
+    for v in &vowels {
+        if let Some(c) = buf.get_mut(v.pos) {
+            c.mark = mark::NONE;
+        }
+    }
+
+    // Apply new mark
+    if let Some(c) = buf.get_mut(pos) {
+        c.mark = mark_value;
+        return TransformResult::success(vec![pos]);
+    }
+
+    TransformResult::none()
+}
+```
+
+**Tone Position Rules:**
+
+| Vowel Pattern | Has Final | Position | Example |
+|---------------|-----------|----------|----------|
+| Single vowel | - | That vowel | bá, bà |
+| Double vowel | Yes | 2nd vowel | hoán, muốn |
+| Double vowel | No | 1st vowel (or marked vowel) | hòa, mưa |
+| Triple vowel | - | Middle vowel | tiêu, oai |
+
+### Stage 4: Remove Modifier
+
+**Purpose:** Remove last diacritic (mark or tone)
+
+```rust
+pub fn apply_remove(buf: &mut Buffer) -> TransformResult {
+    let vowel_positions = buf.find_vowels();
+
+    // Try to remove mark first
+    for pos in vowel_positions.iter().rev() {
+        if let Some(c) = buf.get_mut(*pos) {
+            if c.mark > mark::NONE {
+                c.mark = mark::NONE;
+                return TransformResult::success(vec![*pos]);
+            }
+        }
+    }
+
+    // Then try to remove tone
+    for pos in vowel_positions.iter().rev() {
+        if let Some(c) = buf.get_mut(*pos) {
+            if c.tone > tone::NONE {
+                c.tone = tone::NONE;
+                return TransformResult::success(vec![*pos]);
+            }
+        }
+    }
+
+    TransformResult::none()
+}
+```
+
+### Stage 5: W-as-Vowel (Telex)
+
+**Purpose:** Convert standalone 'w' to 'ư' with validation
+
+```rust core/src/engine/mod.rs
+fn try_w_as_vowel(&mut self, caps: bool) -> Option<Result> {
+    // Only in Telex mode
+    if self.method != 0 {
+        return None;
+    }
+
+    // Skip if last_transform == WShortcutSkipped
+    if matches!(self.last_transform, Some(Transform::WShortcutSkipped)) {
+        return None;
+    }
+
+    // Revert check
+    if matches!(self.last_transform, Some(Transform::WAsVowel)) {
+        // Revert: ư → w
+        self.buf.pop();
+        self.buf.push(Char::new(keys::W, caps));
+        // ...
+        return Some(Result::send(1, &[if caps { 'W' } else { 'w' }]));
+    }
+
+    // Try transformation
+    let mut test_buf = self.buf.clone();
+    test_buf.push(Char::new(keys::U, caps));
+    if let Some(c) = test_buf.get_mut(test_buf.len() - 1) {
+        c.tone = tone::HORN; // U + horn = ư
+    }
+
+    // Validate
+    let test_keys: Vec<u16> = test_buf.iter().map(|c| c.key).collect();
+    if !is_valid(&test_keys) {
+        return None; // Invalid, don't transform
+    }
+
+    // Apply
+    self.buf = test_buf;
+    self.last_transform = Some(Transform::WAsVowel);
+    Some(Result::send(0, &[chars::get_uw(caps)]))
+}
+```
+
+<Accordion title="Examples">
+  ```
+  "w" alone → "ư" (valid syllable)
+  "nhw" → "như" (valid: nh + ư)
+  "kw" → "kw" (invalid: k cannot precede ư)
+  "ww" → "w" (revert)
+  ```
+</Accordion>
+
+### Stage 6: Normal Letter
+
+**Purpose:** Push regular letters to buffer
+
+```rust
+fn handle_normal_letter(&mut self, key: u16, caps: bool) -> Result {
+    // Push to buffer
+    self.buf.push(Char::new(key, caps));
+    
+    // Auto-restore check (for English words)
+    if self.english_auto_restore {
+        self.check_auto_restore();
+    }
+    
+    Result::none()
+}
+```
+
+### Stage 7: Word Boundary Shortcuts
+
+**Purpose:** Expand user-defined abbreviations on space/enter
+
+```rust core/src/engine/shortcut.rs
+pub fn try_match(
+    &self,
+    buffer: &str,
+    key_char: Option<char>,
+    is_word_boundary: bool,
+    method: InputMethod,
+) -> Option<ShortcutMatch> {
+    // Lookup (longest-match-first)
+    for (trigger, shortcut) in self.sorted_triggers() {
+        if !buffer.ends_with(trigger) {
+            continue;
+        }
+        
+        // Check condition
+        match shortcut.condition {
+            TriggerCondition::Immediate => { /* match now */ },
+            TriggerCondition::OnWordBoundary => {
+                if !is_word_boundary {
+                    continue;
+                }
+            }
+        }
+        
+        // Apply case transformation
+        let output = match shortcut.case_mode {
+            CaseMode::Exact => shortcut.replacement.clone(),
+            CaseMode::MatchCase => {
+                if buffer.chars().all(|c| c.is_uppercase()) {
+                    shortcut.replacement.to_uppercase()
+                } else if buffer.chars().next().unwrap().is_uppercase() {
+                    capitalize(&shortcut.replacement)
+                } else {
+                    shortcut.replacement.clone()
+                }
+            }
+        };
+        
+        return Some(ShortcutMatch {
+            backspace_count: trigger.len(),
+            output,
+            include_trigger_key: true,
+        });
+    }
+    
+    None
+}
+```
+
+<Accordion title="Example: 'vn' → 'Việt Nam'">
+  ```
+  User types: v → n → space
+  
+  1. Buffer: "vn"
+  2. Key: space (word boundary)
+  3. Lookup: "vn" matches shortcut
+  4. Case: lowercase → "Việt Nam"
+  5. Output: backspace=2, chars="Việt Nam "
+  ```
+</Accordion>
+
+## Data Structures
+
+### Buffer
+
+```rust core/src/engine/buffer.rs
+/// Circular buffer - fixed 256 chars
+pub struct Buffer {
+    data: [Char; MAX],  // MAX = 256
+    len: usize,
+}
+
+/// Single character with modifiers
+pub struct Char {
+    pub key: u16,     // Virtual keycode
+    pub caps: bool,   // Uppercase?
+    pub tone: u8,     // 0=none, 1=circumflex, 2=horn
+    pub mark: u8,     // 0=none, 1-5=sắc/huyền/hỏi/ngã/nặng
+    pub stroke: bool, // d → đ
+}
+```
+
+### Result Structure
+
+```rust core/src/engine/mod.rs
+#[repr(C)]
+pub struct Result {
+    pub chars: [u32; MAX],  // UTF-32 output
+    pub action: u8,         // 0=None, 1=Send, 2=Restore
+    pub backspace: u8,      // Chars to delete
+    pub count: u8,          // Valid char count
+    pub flags: u8,          // Additional flags
+}
+
+impl Result {
+    pub fn none() -> Self { /* ... */ }
+    pub fn send(backspace: u8, chars: &[char]) -> Self { /* ... */ }
+}
+```
+
+## Complete Flow Example: "được"
+
+<Steps>
+  <Step title="Type 'd'">
+    ```
+    Stage 1-5: not modifier
+    Stage 6: push 'd' to buffer
+    buffer = ['d']
+    ```
+  </Step>
+
+  <Step title="Type 'u'">
+    ```
+    Stage 1-5: not modifier
+    Stage 6: push 'u' to buffer
+    buffer = ['d', 'u']
+    ```
+  </Step>
+
+  <Step title="Type 'o'">
+    ```
+    Stage 1-5: not modifier
+    Stage 6: push 'o' to buffer
+    buffer = ['d', 'u', 'o']
+    ```
+  </Step>
+
+  <Step title="Type 'c'">
+    ```
+    Stage 1-5: not modifier
+    Stage 6: push 'c' to buffer
+    buffer = ['d', 'u', 'o', 'c']
+    ```
+  </Step>
+
+  <Step title="Type 'w' (horn modifier)">
+    ```
+    Stage 2: try_tone()
+    ├─ Validate: "duoc" → VALID ✓
+    ├─ Find UO compound at positions 1-2
+    ├─ Apply HORN to both: u→ư, o→ơ
+    └─ Return: backspace=3, "ươc"
+    
+    Output: delete "uoc", type "ươc" → "dươc"
+    ```
+  </Step>
+
+  <Step title="Type 'j' (nặng modifier)">
+    ```
+    Stage 3: try_mark()
+    ├─ Validate: "dươc" → VALID ✓
+    ├─ Collect vowels: [ư, ơ]
+    ├─ Find position: has_final=true → pos=1 (ơ)
+    ├─ Apply mark: ơ + nặng → ợ
+    └─ Return: backspace=2, "ợc"
+    
+    Output: delete "ơc", type "ợc" → "dượC"
+    ```
+  </Step>
+</Steps>
+
+**Final Result:** "được" ✓
+
+## Double-Key Revert Mechanism
+
+```rust
+LAST_TRANSFORM tracking:
+│
+├── Mark(key, mark_value)
+├── Tone(key, tone_value)
+├── Stroke(key)
+├── WAsVowel
+└── DelayedCircumflex(key)
+
+When modifier key pressed:
+├─ [last_transform.key == current_key?]
+│  ├─ YES → REVERT
+│  │  ├─ Undo transformation
+│  │  ├─ Add key to output
+│  │  └─ Clear last_transform
+│  └─ NO → Apply transformation
+└─ Save current transformation
+```
+
+<Accordion title="Examples">
+  ```
+  "a" + 'a' → "â" (save: Tone(key:'a'))
+  "â" + 'a' → "aa" (revert: â → a, add 'a')
+  
+  "a" + 's' → "á" (save: Mark(key:'s'))
+  "á" + 's' → "as" (revert: á → a, add 's')
+  
+  "d" + 'd' → "đ" (save: Stroke(key:'d'))
+  "đ" + 'd' → "dd" (revert: đ → d, add 'd')
+  ```
+</Accordion>
+
+## Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Zero-Copy" icon="bolt">
+    Buffer operates on fixed array, no heap allocations in hot path
+  </Card>
+  <Card title="Pattern Caching" icon="database">
+    Vowel table pre-computed (72 entries)
+  </Card>
+  <Card title="Early Exit" icon="forward-fast">
+    Validation fails fast on invalid patterns
+  </Card>
+  <Card title="Minimal String Ops" icon="minimize">
+    UTF-32 array operations, string conversion only on output
+  </Card>
+</CardGroup>
+
+---
+
+**See Also:**
+- [Validation Algorithm](/technical/validation-algorithm) - 6-rule validation system
+- [Vietnamese Language System](/technical/vietnamese-language-system) - Language foundations
+- [System Architecture](/technical/system-architecture) - High-level overview

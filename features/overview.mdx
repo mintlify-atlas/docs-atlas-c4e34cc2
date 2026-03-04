@@ -1,0 +1,138 @@
+---
+title: "Features Overview"
+description: "Complete overview of Gõ Nhanh's powerful Vietnamese typing features"
+---
+
+## Core Features
+
+Gõ Nhanh is designed to be fast, reliable, and intelligent. Here's what makes it stand out:
+
+<CardGroup cols={2}>
+  <Card title="Auto-Restore" icon="rotate-left" href="/features/auto-restore">
+    Automatically restores English words typed with Vietnamese input method
+  </Card>
+  <Card title="Smart Switching" icon="brain" href="/features/smart-switching">
+    Per-app mode switching and automatic input source following
+  </Card>
+  <Card title="Input Methods" icon="keyboard" href="/features/input-methods">
+    Telex and VNI with accurate tone placement
+  </Card>
+  <Card title="Shortcuts" icon="bolt" href="/features/shortcuts">
+    Custom text expansion shortcuts
+  </Card>
+</CardGroup>
+
+## Highlight Features
+
+### Auto-Restore for English
+
+Type English words without switching off Vietnamese mode. Gõ Nhanh automatically detects and restores common English words.
+
+```
+text → text ✓   (not "têt")
+user → user ✓   (not "úẻ")
+push → push ✓   (not "púh")
+```
+
+<Note>
+Press ESC after typing to manually restore any word: `user` → `úẻ` → **ESC** → `user`
+</Note>
+
+### Smart Per-App Mode
+
+Gõ Nhanh remembers your ON/OFF preference for each application:
+
+- Code in VS Code (OFF) → Switch to Slack (ON) → Back to VS Code (OFF)
+- No manual toggling needed
+
+### Automatic Input Source Following
+
+Using multiple input sources? Gõ Nhanh automatically disables when you switch to:
+
+- Japanese (あ)
+- Chinese (中)
+- Korean (한)
+- Thai, Khmer, Lao, and other non-Latin scripts
+
+Switching back to English automatically re-enables Gõ Nhanh.
+
+## Performance
+
+<CardGroup cols={3}>
+  <Card title="< 10ms" icon="gauge-high">
+    Ultra-low latency
+  </Card>
+  <Card title="~20MB" icon="memory">
+    Minimal RAM usage
+  </Card>
+  <Card title="Rust" icon="code">
+    Cross-platform core engine
+  </Card>
+</CardGroup>
+
+## Compatibility
+
+### Works Everywhere
+
+Gõ Nhanh works in all macOS applications:
+
+- **IDEs**: VS Code, Cursor, Zed, Windsurf, JetBrains
+- **Browsers**: Chrome, Safari, Arc, Firefox
+- **Productivity**: Notion, Obsidian, Bear
+- **Communication**: Slack, Discord, Telegram
+- **Terminals**: Terminal.app, iTerm2, Ghostty, Warp
+- **AI Tools**: Claude Code, ChatGPT, Cursor AI
+
+### Special Fixes
+
+Built-in compatibility fixes for:
+
+- Chrome/Arc address bar and search
+- Spotlight search
+- Claude Code in IDEs
+- JetBrains IDEs
+
+<Info>
+For apps with input lag (like Electron apps), you can adjust the delay preset in **Settings → Advanced → Per-app config**.
+</Info>
+
+## Input Methods
+
+<CardGroup cols={2}>
+  <Card title="Telex" icon="t">
+    Modern method using letter keys: `s`=sắc, `f`=huyền, `aa`=â, `w`=ư
+  </Card>
+  <Card title="VNI" icon="hashtag">
+    Number-based method: `1`=sắc, `2`=huyền, `6`=â, `7`=ư
+  </Card>
+</CardGroup>
+
+Both methods support:
+- Flexible typing order (tone before or after modifier)
+- Accurate tone placement following Vietnamese rules
+- Auto-capitalization after `.` `!` `?` and Enter
+
+## Three Guarantees
+
+<CardGroup cols={3}>
+  <Card title="Free Forever" icon="gift">
+    No paid tiers, no premium features
+  </Card>
+  <Card title="No Ads" icon="ban">
+    No popups, no interruptions
+  </Card>
+  <Card title="100% Offline" icon="shield">
+    No data collection, open source
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Install Gõ Nhanh" icon="download" href="/installation/macos">
+    Get started in minutes
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/configuration/settings">
+    Customize your experience
+  </Card>
+</CardGroup>

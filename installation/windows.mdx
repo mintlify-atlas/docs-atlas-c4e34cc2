@@ -1,0 +1,227 @@
+---
+title: Windows Installation
+description: Windows support for Gõ Nhanh (Coming Soon)
+---
+
+<Warning>
+  Windows support is currently **in development**. This page describes planned features and architecture for developers interested in contributing.
+</Warning>
+
+Gõ Nhanh for Windows will provide a native Vietnamese input method using modern Windows APIs.
+
+## Current Status
+
+**Coming Soon** — Active development in progress.
+
+Follow development on [GitHub](https://github.com/khaphanspace/gonhanh.org) or check [Releases](https://github.com/khaphanspace/gonhanh.org/releases) for updates.
+
+## Planned Features
+
+The Windows version will include:
+
+- Vietnamese input using **Telex** and **VNI** methods
+- Custom **abbreviations**
+- **Exception list** for applications
+- **System tray** menu with quick settings
+- **Auto-start** with Windows
+- **Per-application** input mode memory
+- **Dark/Light** theme support
+- **Portable** installation option
+
+## System Requirements
+
+<Info>
+  Planned requirements for the Windows version:
+  - Windows 10 (1809+) or Windows 11
+  - .NET 8.0 Runtime (included in installer)
+  - 64-bit processor
+</Info>
+
+## Input Methods
+
+### Telex Mode
+
+| Type | Result |
+|------|--------|
+| `as`, `af`, `ar`, `ax`, `aj` | á, à, ả, ã, ạ |
+| `aa`, `aw`, `ee`, `oo` | â, ă, ê, ô |
+| `ow`, `uw`, `dd` | ơ, ư, đ |
+
+**Example:** Type `tiengw vieetj` → `tiếng việt`
+
+### VNI Mode
+
+| Type | Result |
+|------|--------|
+| `a1`, `a2`, `a3`, `a4`, `a5` | á, à, ả, ã, ạ |
+| `a6`, `a8`, `o6`, `e6` | â, ă, ô, ê |
+| `o7`, `u7`, `d9` | ơ, ư, đ |
+
+**Example:** Type `tie61ng vie65t` → `tiếng việt`
+
+## Architecture Overview
+
+For developers interested in the technical implementation:
+
+### Technology Stack
+
+- **Frontend:** WPF (.NET 8.0) for modern Windows UI
+- **Backend:** Rust core library (same engine as macOS/Linux)
+- **Keyboard Hook:** Win32 Low-Level Keyboard Hook API
+- **Text Insertion:** SendInput API with Unicode support
+- **Settings:** Windows Registry
+
+### Project Structure
+
+```
+platforms/windows/
+├── GoNhanh/
+│   ├── GoNhanh.csproj      # WPF project
+│   ├── App.xaml            # Application entry point
+│   ├── Core/
+│   │   ├── RustBridge.cs   # FFI to Rust core
+│   │   ├── KeyboardHook.cs # Low-level hook
+│   │   └── TextSender.cs   # SendInput wrapper
+│   ├── Views/
+│   │   ├── TrayIcon.cs     # System tray
+│   │   ├── SettingsWindow  # Settings UI
+│   │   └── AboutWindow     # About dialog
+│   └── Native/
+│       └── gonhanh_core.dll # Rust library
+└── README.md
+```
+
+### Keyboard Hook Implementation
+
+Uses `SetWindowsHookEx` with `WH_KEYBOARD_LL` for system-wide keyboard interception:
+
+```csharp
+// Low-level keyboard hook (similar to CGEventTap on macOS)
+SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hInstance, 0);
+```
+
+### Text Insertion Method
+
+Uses `SendInput` API with `KEYEVENTF_UNICODE` flag:
+
+```csharp
+// Unicode character insertion for Vietnamese diacritics
+SendInput(inputs.Length, inputs, Marshal.SizeOf<INPUT>());
+```
+
+## Building from Source
+
+Developers can build the Windows version from source:
+
+<Steps>
+  <Step title="Install prerequisites">
+    Required software:
+    - **Windows 10/11** (64-bit)
+    - **Visual Studio 2022** with C++ and .NET workloads
+    - **Rust toolchain** with MSVC target
+    - **.NET 8.0 SDK**
+
+    Install Rust:
+    ```powershell
+    # Download from https://rustup.rs
+    rustup target add x86_64-pc-windows-msvc
+    ```
+
+    Install .NET 8.0 SDK from [dotnet.microsoft.com](https://dotnet.microsoft.com/download/dotnet/8.0)
+  </Step>
+
+  <Step title="Clone repository">
+    ```powershell
+    git clone https://github.com/khaphanspace/gonhanh.org.git
+    cd gonhanh.org
+    ```
+  </Step>
+
+  <Step title="Run setup script">
+    ```powershell
+    powershell -ExecutionPolicy Bypass -File scripts/setup/windows.ps1
+    ```
+  </Step>
+
+  <Step title="Build Rust core">
+    ```powershell
+    powershell -ExecutionPolicy Bypass -File scripts/build/core-windows.ps1
+    ```
+  </Step>
+
+  <Step title="Build WPF application">
+    Using command line:
+    ```powershell
+    cd platforms/windows/GoNhanh
+    dotnet build -c Release
+    ```
+
+    Or open `platforms/windows/GoNhanh/GoNhanh.csproj` in Visual Studio 2022.
+  </Step>
+</Steps>
+
+## Known Considerations
+
+### Antivirus False Positives
+
+Low-level keyboard hooks may trigger antivirus warnings. Solutions:
+- Code signing with a valid certificate
+- Submit to Microsoft for SmartScreen reputation
+- Add to antivirus exclusions during development
+
+### UAC and Admin Rights
+
+The application should work without admin rights for most applications. However:
+- Some elevated applications may not receive keyboard input
+- This is a Windows security limitation
+
+### UWP App Compatibility
+
+Some Windows Store apps may block low-level keyboard hooks due to app container isolation.
+
+### Settings Storage
+
+Settings are stored in Windows Registry:
+
+```
+HKEY_CURRENT_USER\SOFTWARE\GoNhanh
+```
+
+Auto-start configuration:
+```
+HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
+```
+
+## Contributing
+
+Interested in helping develop the Windows version?
+
+<Steps>
+  <Step title="Check existing issues">
+    Visit [GitHub Issues](https://github.com/khaphanspace/gonhanh.org/issues) for open tasks
+  </Step>
+
+  <Step title="Read development docs">
+    See [platforms/windows/README.md](https://github.com/khaphanspace/gonhanh.org/blob/main/platforms/windows/README.md) for detailed architecture
+  </Step>
+
+  <Step title="Join discussions">
+    Participate in [GitHub Discussions](https://github.com/khaphanspace/gonhanh.org/discussions)
+  </Step>
+</Steps>
+
+## Stay Updated
+
+Get notified when Windows support launches:
+
+- **Watch** the [GitHub repository](https://github.com/khaphanspace/gonhanh.org)
+- Check [Releases](https://github.com/khaphanspace/gonhanh.org/releases) page
+- Follow the [project README](https://github.com/khaphanspace/gonhanh.org#readme)
+
+## License
+
+Gõ Nhanh for Windows will be licensed under **GPL-3.0-or-later**.
+
+<Info>
+  The core Vietnamese input engine is shared across all platforms (macOS, Linux, Windows) and is licensed under **BSD-3-Clause**.
+</Info>

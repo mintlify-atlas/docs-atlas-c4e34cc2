@@ -1,0 +1,288 @@
+---
+title: macOS Installation
+description: Complete guide to installing and using Gõ Nhanh on macOS
+---
+
+Gõ Nhanh is a free, fast, and stable Vietnamese input method for macOS. Install and use immediately - no ads, no data collection.
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="Homebrew (Recommended)">
+    The easiest way to install Gõ Nhanh is using Homebrew:
+
+    ```bash
+    brew install --cask gonhanh
+    ```
+
+    After installation, grant accessibility permissions:
+    
+    **System Settings → Privacy & Security → Accessibility → Enable GoNhanh**
+
+    <Info>
+      The app automatically checks for updates every 24 hours. You can also manually update using:
+      ```bash
+      brew upgrade --cask gonhanh
+      ```
+    </Info>
+  </Tab>
+
+  <Tab title="Manual Download">
+    <Steps>
+      <Step title="Download GoNhanh.dmg">
+        Download the latest version from GitHub:
+        
+        [Download GoNhanh.dmg](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh.dmg)
+      </Step>
+
+      <Step title="Install the application">
+        Open the `.dmg` file and drag **GoNhanh** into your **Applications** folder.
+      </Step>
+
+      <Step title="Remove quarantine attribute">
+        <Warning>
+          You must quit the app before running this command.
+        </Warning>
+
+        Open Terminal and run:
+        ```bash
+        xattr -cr /Applications/GoNhanh.app
+        ```
+
+        This removes the macOS quarantine attribute that prevents unsigned apps from running.
+      </Step>
+
+      <Step title="Grant accessibility permissions">
+        Launch GoNhanh, then go to:
+        
+        **System Settings → Privacy & Security → Accessibility → Enable GoNhanh**
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## System Requirements
+
+<Info>
+  - macOS 13.0 (Ventura) or later
+  - Apple Silicon or Intel processor
+</Info>
+
+## Usage
+
+### Keyboard Shortcuts
+
+| Shortcut | Function |
+|----------|----------|
+| `Ctrl + Space` | Toggle Vietnamese input on/off |
+| `ESC` | Restore English text (e.g., `úẻ` → `user`) |
+
+### Telex Mode (Default)
+
+Telex is the default input method:
+
+| Type | Result |
+|------|--------|
+| `as`, `af`, `ar`, `ax`, `aj` | á, à, ả, ã, ạ |
+| `aa`, `aw`, `ee`, `oo` | â, ă, ê, ô |
+| `ow`, `uw`, `dd` | ơ, ư, đ |
+
+**Example:** Type `vieetj namd` → `việt nam`
+
+### VNI Mode
+
+Switch to VNI mode via: **Menu Bar → Settings → Input Method → VNI**
+
+| Type | Result |
+|------|--------|
+| `a1`, `a2`, `a3`, `a4`, `a5` | á, à, ả, ã, ạ |
+| `a6`, `a8`, `o6`, `e6` | â, ă, ô, ê |
+| `o7`, `u7`, `d9` | ơ, ư, đ |
+
+**Example:** Type `vie65t nam` → `việt nam`
+
+## Key Features
+
+### Auto-restore English Words
+
+When typing English words with Telex, Gõ Nhanh automatically restores them when you press **Space**:
+
+| Type | macOS Telex | Gõ Nhanh |
+|------|-------------|----------|
+| `text ` | `têt ` ❌ | `text ` ✅ |
+| `expect ` | `ễpct ` ❌ | `expect ` ✅ |
+| `perfect ` | `pềct ` ❌ | `perfect ` ✅ |
+| `with ` | `ưith ` ❌ | `with ` ✅ |
+| `luxury ` | `lủuy ` ❌ | `luxury ` ✅ |
+
+<Note>
+  Some English words form valid Vietnamese syllables (e.g., `mix` → `mĩ`, `box` → `bõ`). For these cases, press **ESC** after typing to restore the original word.
+</Note>
+
+### Smart Mode Switching
+
+Gõ Nhanh remembers the on/off state for each application:
+- Code in VS Code (off) → Chat in Slack (on) → automatically switches
+
+### Auto-capitalization
+
+Automatically capitalizes the first letter after `.`, `!`, `?`, or Enter:
+- Type `ok.` + Space + `b` → `B` (capitalized)
+
+### Abbreviations
+
+Create custom abbreviations via **Menu Bar → Settings → Abbreviations**
+
+Default abbreviations:
+- `vn` → `Việt Nam`
+- `ko` → `không`
+
+## Advanced Configuration
+
+### Per-Application Delay Settings
+
+<Warning>
+  Experiencing text swallowing when using Claude Code in IDEs (VS Code, Cursor, Windsurf)?
+</Warning>
+
+<Steps>
+  <Step title="Open Settings">
+    Click the Gõ Nhanh icon in the Menu Bar → **Settings** → **Advanced** tab
+  </Step>
+
+  <Step title="Add your IDE">
+    Under "Per-Application Settings", click **+** and select your IDE
+  </Step>
+
+  <Step title="Adjust delay">
+    Drag the **Delay** slider to the right → **"Very High"** (purple)
+  </Step>
+
+  <Step title="Done">
+    Settings are saved automatically. Different machines and IDEs may require different delay settings.
+  </Step>
+</Steps>
+
+### Exception List
+
+Add applications where you don't want Vietnamese input:
+
+**Menu Bar → Settings → Exceptions → Add application**
+
+### Launch at Login
+
+**System Settings → General → Login Items → Add GoNhanh**
+
+## Updating
+
+<Tabs>
+  <Tab title="Homebrew">
+    ```bash
+    brew upgrade --cask gonhanh
+    ```
+  </Tab>
+
+  <Tab title="Manual">
+    **Menu Bar → Settings → Updates → Download and Install**
+    
+    Or download the latest version from [GitHub Releases](https://github.com/khaphanspace/gonhanh.org/releases/latest)
+  </Tab>
+</Tabs>
+
+## Uninstallation
+
+<Tabs>
+  <Tab title="Homebrew">
+    ```bash
+    brew uninstall --cask gonhanh
+    ```
+  </Tab>
+
+  <Tab title="Manual">
+    <Steps>
+      <Step title="Quit the application">
+        Click the Menu Bar icon → **Quit**
+      </Step>
+
+      <Step title="Delete from Applications">
+        Remove GoNhanh.app from your Applications folder
+      </Step>
+
+      <Step title="Remove settings (optional)">
+        ```bash
+        rm -rf ~/.config/gonhanh ~/Library/Preferences/org.gonhanh.*
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+### App won't open
+
+Run this command in Terminal:
+```bash
+xattr -cr /Applications/GoNhanh.app
+```
+
+Then try opening the app again.
+
+### Can't type Vietnamese
+
+<Steps>
+  <Step title="Check Menu Bar icon">
+    The icon should display "VN" when Vietnamese input is enabled
+  </Step>
+
+  <Step title="Toggle Vietnamese mode">
+    Press `Ctrl + Space` to toggle
+  </Step>
+
+  <Step title="Verify Accessibility permissions">
+    **System Settings → Privacy & Security → Accessibility** → Ensure GoNhanh is enabled
+  </Step>
+</Steps>
+
+### After macOS update
+
+Sometimes macOS updates reset accessibility permissions:
+
+**System Settings → Privacy & Security → Accessibility** → Toggle GoNhanh off and on again
+
+### Text swallowing in IDEs
+
+See [Per-Application Delay Settings](#per-application-delay-settings) above.
+
+## Supported Applications
+
+Gõ Nhanh works with all macOS applications, including:
+- **Editors:** VS Code, Zed, Cursor, Windsurf, JetBrains IDEs
+- **Browsers:** Chrome, Safari, Firefox, Arc
+- **Chat:** Slack, Discord, Telegram
+- **Notes:** Notion, Obsidian, Apple Notes
+- **Terminals:** Terminal.app, iTerm2, Ghostty
+- **AI Tools:** Claude Code, ChatGPT Desktop
+
+<Info>
+  For best performance with Claude Code and similar AI coding assistants, adjust the per-application delay settings.
+</Info>
+
+## Privacy & Security
+
+### "Three No's" Commitment
+
+- **No fees** — Free forever, no Pro version
+- **No ads** — No popups, no interruptions
+- **No tracking** — 100% offline, open source
+
+### Accessibility Permissions
+
+Gõ Nhanh requires Accessibility permissions to:
+- Intercept keyboard events
+- Transform Vietnamese input in real-time
+- All processing happens locally on your device
+
+<Note>
+  Gõ Nhanh is open source. You can review the code at [github.com/khaphanspace/gonhanh.org](https://github.com/khaphanspace/gonhanh.org)
+</Note>
